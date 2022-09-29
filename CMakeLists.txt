@@ -2,15 +2,19 @@ cmake_minimum_required(VERSION 3.22)
 
 project(CppTinyRefactor C CXX)
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(LLVM 14 REQUIRED)
 find_package(Clang REQUIRED)
 
-add_executable(test test.cpp)
+add_compile_options(-Wall)
 
-# target_compile_definitions(test PRIVATE ${LLVM_DEFINITIONS})
-# target_link_libraries(test PRIVATE )
-
-target_include_directories(test PRIVATE ${LLVM_INCLUDE_DIR})
-target_link_libraries(test PRIVATE LLVMSupport clangTooling)
+add_subdirectory(function_definition_generator)

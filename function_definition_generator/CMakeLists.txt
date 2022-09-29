@@ -1,0 +1,6 @@
+add_executable(cpp_tiny_refactor_definition_generator definition_generator.cpp tool.cpp)
+
+target_include_directories(cpp_tiny_refactor_definition_generator PRIVATE ${LLVM_INCLUDE_DIR})
+target_link_libraries(cpp_tiny_refactor_definition_generator PRIVATE LLVMSupport clangTooling)
+
+target_compile_options(cpp_tiny_refactor_definition_generator PRIVATE -Wno-deprecated-enum-enum-conversion)

@@ -16,22 +16,6 @@ using namespace llvm;
 using namespace clang;
 using namespace clang::ast_matchers;
 
-class MethodDeclarationPrinter : public MatchFinder::MatchCallback
-{
-  public:
-    void run(const MatchFinder::MatchResult& result) override
-    {
-        if (auto node{result.Nodes.getNodeAs<clang::CXXMethodDecl>("method declaration")}; node != nullptr)
-        {
-            auto& source_manager{result.Context->getSourceManager()};
-            auto source_location{node->getLocation()};
-            auto line_nr{source_manager.getPresumedLoc(source_location).getLine()};
-            std::cout << "Line nr: " << line_nr << std::endl;
-            node->dump();
-        }
-    }
-};
-
 namespace CppTinyRefactor
 {
 struct MethodDeclarationFile
@@ -120,7 +104,7 @@ int main(int argc, const char** argv)
     Tool.setDiagnosticConsumer(&diagnostic_consumer);
 
     MethodDefinitionGenerator generator{MethodDeclarationFile{OptionsParser.getSourcePathList()[0]},
-                                        MethodDeclarationLineNumber{34}};
+                                        MethodDeclarationLineNumber{43}};
     MatchFinder finder;
     DeclarationMatcher matcher{cxxMethodDecl().bind("method declaration")};
     finder.addMatcher(matcher, &generator);
