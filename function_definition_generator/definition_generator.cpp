@@ -21,8 +21,8 @@ DefinitionGenerator::DefinitionGenerator(FileWithDeclaration f, LineWithDeclarat
 
 void DefinitionGenerator::run(const clang::ast_matchers::MatchFinder::MatchResult& result)
 {
-    auto node{result.Nodes.getNodeAs<clang::CXXMethodDecl>("method declaration")};
-    if (node == nullptr)
+    auto node{result.Nodes.getNodeAs<clang::FunctionDecl>("function declaration")};
+    if (node == nullptr or not node->getLocation().isValid())
         return;
 
     auto& source_manager{result.Context->getSourceManager()};
@@ -46,18 +46,18 @@ void DefinitionGenerator::run(const clang::ast_matchers::MatchFinder::MatchResul
     std::cout << std::endl;
 }
 
-void DefinitionGenerator::print_return_type_if_any(const clang::CXXMethodDecl* node) const
+void DefinitionGenerator::print_return_type_if_any(const Decl* node) const
 {
     if (auto kind{node->getKind()}; kind != Decl::Kind::CXXConstructor and kind != Decl::Kind::CXXDestructor)
         std::cout << node->getReturnType().getAsString(printing_policy) << ' ';
 }
 
-void DefinitionGenerator::print_name(const clang::CXXMethodDecl* node) const
+void DefinitionGenerator::print_name(const Decl* node) const
 {
     std::cout << node->getQualifiedNameAsString();
 }
 
-void DefinitionGenerator::print_parameters(const clang::CXXMethodDecl* node) const
+void DefinitionGenerator::print_parameters(const Decl* node) const
 {
     std::vector<std::string> params_stringified;
     params_stringified.reserve(node->parameters().size());
@@ -78,13 +78,11 @@ void DefinitionGenerator::print_parameters(const clang::CXXMethodDecl* node) con
     std::cout << ')';
 }
 
-void DefinitionGenerator::print_const_qualifier_if_has_one(const clang::CXXMethodDecl* node) const
+void DefinitionGenerator::print_const_qualifier_if_has_one(const Decl* node) const
 {
-    // if (auto method_node{dynamic_cast<const clang::CXXMethodDecl*>(node)}; method_node != nullptr)
-    //     if (method_node->isConst())
-    //         std::cout << " const";
-    if (node->isConst())
-        std::cout << " const";
+    if (auto method_node{dynamic_cast<const clang::CXXMethodDecl*>(node)}; method_node != nullptr)
+        if (method_node->isConst())
+            std::cout << " const";
 }
 
 } // namespace CppTinyRefactor

@@ -33,9 +33,9 @@ int main(int argc, const char** argv)
     ClangTool Tool(OptionsParser.getCompilations(), OptionsParser.getSourcePathList());
     Tool.setDiagnosticConsumer(&diagnostic_consumer);
 
-    DefinitionGenerator generator{FileWithDeclaration{OptionsParser.getSourcePathList()[0]}, LineWithDeclaration{44}};
+    DefinitionGenerator generator{FileWithDeclaration{OptionsParser.getSourcePathList()[0]}, LineWithDeclaration{61}};
     MatchFinder finder;
-    DeclarationMatcher matcher{cxxMethodDecl().bind("method declaration")};
+    DeclarationMatcher matcher{functionDecl().bind("function declaration")};
     finder.addMatcher(matcher, &generator);
 
     return Tool.run(newFrontendActionFactory(&finder).get());

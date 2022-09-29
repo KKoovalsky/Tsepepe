@@ -38,10 +38,12 @@ class DefinitionGenerator final : public clang::ast_matchers::MatchFinder::Match
     void run(const clang::ast_matchers::MatchFinder::MatchResult&) override;
 
   private:
-    void print_return_type_if_any(const clang::CXXMethodDecl*) const;
-    void print_name(const clang::CXXMethodDecl*) const;
-    void print_parameters(const clang::CXXMethodDecl*) const;
-    void print_const_qualifier_if_has_one(const clang::CXXMethodDecl*) const;
+    using Decl = clang::FunctionDecl;
+
+    void print_return_type_if_any(const Decl*) const;
+    void print_name(const Decl*) const;
+    void print_parameters(const Decl*) const;
+    void print_const_qualifier_if_has_one(const Decl*) const;
 
     std::string file;
     unsigned line_number;
