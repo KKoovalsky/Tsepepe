@@ -2,8 +2,6 @@
  * @file	tool.cpp
  * @brief	The main app entry for the function definition generator.
  */
-#include <clang/ASTMatchers/ASTMatchFinder.h>
-#include <clang/ASTMatchers/ASTMatchers.h>
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/Tooling.h>
 #include <llvm/Support/CommandLine.h>
@@ -13,7 +11,6 @@
 using namespace clang;
 using namespace llvm::cl;
 using namespace clang::tooling;
-using namespace clang::ast_matchers;
 
 using namespace CppTinyRefactor;
 
@@ -34,9 +31,5 @@ int main(int argc, const char** argv)
     Tool.setDiagnosticConsumer(&diagnostic_consumer);
 
     DefinitionGenerator generator{FileWithDeclaration{OptionsParser.getSourcePathList()[0]}, LineWithDeclaration{61}};
-    MatchFinder finder;
-    DeclarationMatcher matcher{functionDecl().bind("function declaration")};
-    finder.addMatcher(matcher, &generator);
-
-    return Tool.run(newFrontendActionFactory(&finder).get());
+    return Tool.run(newFrontendActionFactory(&generator).get());
 }

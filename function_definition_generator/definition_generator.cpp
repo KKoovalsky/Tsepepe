@@ -1,6 +1,6 @@
 /**
  * @file	definition_generator.cpp
- * @brief	Implements the MethodDefinitionGenerator.
+ * @brief	Implements the MethodDefinitionPrinter.
  */
 
 #include <experimental/iterator>
@@ -9,17 +9,21 @@
 #include "definition_generator.hpp"
 
 using namespace clang;
+using namespace clang::ast_matchers;
 
 namespace CppTinyRefactor
 {
 
-DefinitionGenerator::DefinitionGenerator(FileWithDeclaration f, LineWithDeclaration l) :
+namespace detail
+{
+
+DefinitionPrinter::DefinitionPrinter(FileWithDeclaration f, LineWithDeclaration l) :
     file{std::move(f.value)}, line_number{l.value}, printing_policy(LangOptions())
 {
     printing_policy.SuppressTagKeyword = 1;
 }
 
-void DefinitionGenerator::run(const clang::ast_matchers::MatchFinder::MatchResult& result)
+void DefinitionPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult& result)
 {
     auto node{result.Nodes.getNodeAs<clang::FunctionDecl>("function declaration")};
     if (node == nullptr or not node->getLocation().isValid())
@@ -46,18 +50,18 @@ void DefinitionGenerator::run(const clang::ast_matchers::MatchFinder::MatchResul
     std::cout << std::endl;
 }
 
-void DefinitionGenerator::print_return_type_if_any(const Decl* node) const
+void DefinitionPrinter::print_return_type_if_any(const Decl* node) const
 {
     if (auto kind{node->getKind()}; kind != Decl::Kind::CXXConstructor and kind != Decl::Kind::CXXDestructor)
         std::cout << node->getReturnType().getAsString(printing_policy) << ' ';
 }
 
-void DefinitionGenerator::print_name(const Decl* node) const
+void DefinitionPrinter::print_name(const Decl* node) const
 {
     std::cout << node->getQualifiedNameAsString();
 }
 
-void DefinitionGenerator::print_parameters(const Decl* node) const
+void DefinitionPrinter::print_parameters(const Decl* node) const
 {
     std::vector<std::string> params_stringified;
     params_stringified.reserve(node->parameters().size());
@@ -78,11 +82,19 @@ void DefinitionGenerator::print_parameters(const Decl* node) const
     std::cout << ')';
 }
 
-void DefinitionGenerator::print_const_qualifier_if_has_one(const Decl* node) const
+void DefinitionPrinter::print_const_qualifier_if_has_one(const Decl* node) const
 {
     if (auto method_node{dynamic_cast<const clang::CXXMethodDecl*>(node)}; method_node != nullptr)
         if (method_node->isConst())
             std::cout << " const";
+}
+
+} // namespace detail
+
+DefinitionGenerator::DefinitionGenerator(FileWithDeclaration f, LineWithDeclaration l) :
+    printer{f, l}, matcher{functionDecl().bind("function declaration")}
+{
+    addMatcher(matcher, &printer);
 }
 
 } // namespace CppTinyRefactor

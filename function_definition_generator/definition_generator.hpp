@@ -30,10 +30,13 @@ struct LineWithDeclaration
     unsigned value;
 };
 
-class DefinitionGenerator final : public clang::ast_matchers::MatchFinder::MatchCallback
+namespace detail
+{
+
+class DefinitionPrinter final : public clang::ast_matchers::MatchFinder::MatchCallback
 {
   public:
-    explicit DefinitionGenerator(FileWithDeclaration, LineWithDeclaration);
+    explicit DefinitionPrinter(FileWithDeclaration, LineWithDeclaration);
 
     void run(const clang::ast_matchers::MatchFinder::MatchResult&) override;
 
@@ -51,6 +54,17 @@ class DefinitionGenerator final : public clang::ast_matchers::MatchFinder::Match
     clang::PrintingPolicy printing_policy;
 };
 
+} // namespace detail
+
+class DefinitionGenerator : public clang::ast_matchers::MatchFinder
+{
+  public:
+    explicit DefinitionGenerator(FileWithDeclaration, LineWithDeclaration);
+
+  private:
+    detail::DefinitionPrinter printer;
+    clang::ast_matchers::DeclarationMatcher matcher;
+};
 }; // namespace CppTinyRefactor
 
 #endif /* DEFINITION_GENERATOR_HPP */
