@@ -32,6 +32,6 @@ Feature: Generates function definitions
         When Method Definition Is Generated From Declaration At Line 7
         Then Stdout contains
             """
-            Foo::Bar SomeClass::yolo()
+            Foo::Bar Foo::yolo()
             """
         And No errors are emitted
