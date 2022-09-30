@@ -6,13 +6,11 @@
 
 #include <clang/Basic/Diagnostic.h>
 #include <clang/Tooling/Tooling.h>
-#include <llvm/Support/CommandLine.h>
 
 #include "cmd_parser.hpp"
 #include "definition_generator.hpp"
 
 using namespace clang;
-// using namespace llvm::cl;
 using namespace clang::tooling;
 
 using namespace CppTinyRefactor;
@@ -40,6 +38,8 @@ int main(int argc, const char** argv)
         std::cerr << "ERROR: No valid declaration found!\n" << std::endl;
         return 1;
     } else
+    {
         std::cout << generator.get() << std::endl;
+    }
     return return_code;
 }
