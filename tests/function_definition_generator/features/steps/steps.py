@@ -31,7 +31,7 @@ def step_impl(context, line):
 
     tool_path = get_tool_path(context)
     header_file_path = context.created_files[-1].path
-    cmd = [tool_path, "-p", context.comp_db.path, header_file_path]
+    cmd = [tool_path, context.comp_db.path, header_file_path, line]
     cmd_result = subprocess.run(cmd, capture_output=True)
     context.result = ToolResult(
         cmd_result.stdout, cmd_result.stderr, cmd_result.returncode
