@@ -11,25 +11,10 @@
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
 
+#include "function_declaration_location.hpp"
+
 namespace CppTinyRefactor
 {
-struct FileWithDeclaration
-{
-    explicit FileWithDeclaration(std::string v) : value{std::move(v)}
-    {
-    }
-
-    std::string value;
-};
-
-struct LineWithDeclaration
-{
-    explicit LineWithDeclaration(unsigned v) : value{v}
-    {
-    }
-
-    unsigned value;
-};
 
 namespace detail
 {
@@ -37,7 +22,7 @@ namespace detail
 class DefinitionPrinter final : public clang::ast_matchers::MatchFinder::MatchCallback
 {
   public:
-    explicit DefinitionPrinter(FileWithDeclaration, LineWithDeclaration);
+    explicit DefinitionPrinter(FunctionDeclarationLocation);
 
     void run(const clang::ast_matchers::MatchFinder::MatchResult&) override;
 
@@ -52,8 +37,7 @@ class DefinitionPrinter final : public clang::ast_matchers::MatchFinder::MatchCa
     void print_parameters(const Decl*);
     void print_const_qualifier_if_has_one(const Decl*);
 
-    std::string file;
-    unsigned line_number;
+    FunctionDeclarationLocation declaration_location;
 
     clang::PrintingPolicy printing_policy;
 
@@ -65,7 +49,7 @@ class DefinitionPrinter final : public clang::ast_matchers::MatchFinder::MatchCa
 class DefinitionGenerator : public clang::ast_matchers::MatchFinder
 {
   public:
-    explicit DefinitionGenerator(FileWithDeclaration, LineWithDeclaration);
+    explicit DefinitionGenerator(FunctionDeclarationLocation);
 
     //! Returns the definition for the corresponding declaration.
     std::string get() const;

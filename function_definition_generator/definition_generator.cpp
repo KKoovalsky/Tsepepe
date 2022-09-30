@@ -16,8 +16,8 @@ namespace CppTinyRefactor
 namespace detail
 {
 
-DefinitionPrinter::DefinitionPrinter(FileWithDeclaration f, LineWithDeclaration l) :
-    file{std::move(f.value)}, line_number{l.value}, printing_policy(LangOptions())
+DefinitionPrinter::DefinitionPrinter(FunctionDeclarationLocation loc) :
+    declaration_location{std::move(loc)}, printing_policy(LangOptions())
 {
     printing_policy.SuppressTagKeyword = 1;
 }
@@ -35,7 +35,7 @@ void DefinitionPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult&
     auto matched_node_file_name{presumed_loc.getFilename()};
     auto matched_node_line_nr{presumed_loc.getLine()};
 
-    if (matched_node_line_nr != line_number or matched_node_file_name != file)
+    if (matched_node_line_nr != declaration_location.line or matched_node_file_name != declaration_location.file)
         return;
 
     if (node->isImplicit())
@@ -95,8 +95,8 @@ std::string DefinitionPrinter::get() const
 
 } // namespace detail
 
-DefinitionGenerator::DefinitionGenerator(FileWithDeclaration f, LineWithDeclaration l) :
-    printer{f, l}, matcher{functionDecl().bind("function declaration")}
+DefinitionGenerator::DefinitionGenerator(FunctionDeclarationLocation loc) :
+    printer{std::move(loc)}, matcher{functionDecl().bind("function declaration")}
 {
     addMatcher(matcher, &printer);
 }

@@ -4,37 +4,42 @@
  */
 #include <iostream>
 
-#include <clang/Tooling/CommonOptionsParser.h>
+#include <clang/Basic/Diagnostic.h>
 #include <clang/Tooling/Tooling.h>
 #include <llvm/Support/CommandLine.h>
 
+#include "cmd_parser.hpp"
 #include "definition_generator.hpp"
 
 using namespace clang;
-using namespace llvm::cl;
+// using namespace llvm::cl;
 using namespace clang::tooling;
 
 using namespace CppTinyRefactor;
 
 int main(int argc, const char** argv)
 {
-    OptionCategory cat("Function Definition Generator options");
-    auto ExpectedParser = CommonOptionsParser::create(argc, argv, cat, NumOccurrencesFlag::OneOrMore, "MAKAPAKA");
-    if (!ExpectedParser)
+    DefinitionGeneratorCmdParser cmd_parser{argc, argv};
+    if (!cmd_parser)
     {
-        // Fail gracefully for unsupported options.
-        llvm::errs() << ExpectedParser.takeError();
-        return 1;
+        cmd_parser.dump_streams();
+        return cmd_parser.get_return_code();
     }
 
-    IgnoringDiagConsumer diagnostic_consumer;
-    CommonOptionsParser& OptionsParser = ExpectedParser.get();
-    ClangTool Tool(OptionsParser.getCompilations(), OptionsParser.getSourcePathList());
-    Tool.setDiagnosticConsumer(&diagnostic_consumer);
+    auto declaration_location{cmd_parser.get_function_declaration_location()};
+    ClangTool tool(cmd_parser.get_compilation_database(), declaration_location.file);
 
-    auto source_file{OptionsParser.getSourcePathList()[0]};
-    DefinitionGenerator generator{FileWithDeclaration{source_file}, LineWithDeclaration{3}};
-    auto return_code{Tool.run(newFrontendActionFactory(&generator).get())};
-    std::cout << generator.get() << std::endl;
+    IgnoringDiagConsumer diagnostic_consumer;
+    tool.setDiagnosticConsumer(&diagnostic_consumer);
+
+    DefinitionGenerator generator{declaration_location};
+    auto return_code{tool.run(newFrontendActionFactory(&generator).get())};
+    auto definition{generator.get()};
+    if (definition.empty())
+    {
+        std::cerr << "ERROR: No valid declaration found!\n" << std::endl;
+        return 1;
+    } else
+        std::cout << generator.get() << std::endl;
     return return_code;
 }
