@@ -2,6 +2,8 @@
  * @file	tool.cpp
  * @brief	The main app entry for the function definition generator.
  */
+#include <iostream>
+
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/Tooling.h>
 #include <llvm/Support/CommandLine.h>
@@ -30,6 +32,9 @@ int main(int argc, const char** argv)
     ClangTool Tool(OptionsParser.getCompilations(), OptionsParser.getSourcePathList());
     Tool.setDiagnosticConsumer(&diagnostic_consumer);
 
-    DefinitionGenerator generator{FileWithDeclaration{OptionsParser.getSourcePathList()[0]}, LineWithDeclaration{3}};
-    return Tool.run(newFrontendActionFactory(&generator).get());
+    auto source_file{OptionsParser.getSourcePathList()[0]};
+    DefinitionGenerator generator{FileWithDeclaration{source_file}, LineWithDeclaration{3}};
+    auto return_code{Tool.run(newFrontendActionFactory(&generator).get())};
+    std::cout << generator.get() << std::endl;
+    return return_code;
 }

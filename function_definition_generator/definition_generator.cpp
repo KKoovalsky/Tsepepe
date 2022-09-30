@@ -4,7 +4,6 @@
  */
 
 #include <experimental/iterator>
-#include <iostream>
 
 #include "definition_generator.hpp"
 
@@ -47,21 +46,21 @@ void DefinitionPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult&
     print_parameters(node);
     print_const_qualifier_if_has_one(node);
 
-    std::cout << std::endl;
+    output_stream << std::endl;
 }
 
-void DefinitionPrinter::print_return_type_if_any(const Decl* node) const
+void DefinitionPrinter::print_return_type_if_any(const Decl* node)
 {
     if (auto kind{node->getKind()}; kind != Decl::Kind::CXXConstructor and kind != Decl::Kind::CXXDestructor)
-        std::cout << node->getReturnType().getAsString(printing_policy) << ' ';
+        output_stream << node->getReturnType().getAsString(printing_policy) << ' ';
 }
 
-void DefinitionPrinter::print_name(const Decl* node) const
+void DefinitionPrinter::print_name(const Decl* node)
 {
-    std::cout << node->getQualifiedNameAsString();
+    output_stream << node->getQualifiedNameAsString();
 }
 
-void DefinitionPrinter::print_parameters(const Decl* node) const
+void DefinitionPrinter::print_parameters(const Decl* node)
 {
     std::vector<std::string> params_stringified;
     params_stringified.reserve(node->parameters().size());
@@ -75,18 +74,23 @@ void DefinitionPrinter::print_parameters(const Decl* node) const
         params_stringified.emplace_back(std::move(param_as_string));
     }
 
-    std::cout << '(';
+    output_stream << '(';
     std::copy(std::begin(params_stringified),
               std::end(params_stringified),
-              std::experimental::make_ostream_joiner(std::cout, ", "));
-    std::cout << ')';
+              std::experimental::make_ostream_joiner(output_stream, ", "));
+    output_stream << ')';
 }
 
-void DefinitionPrinter::print_const_qualifier_if_has_one(const Decl* node) const
+void DefinitionPrinter::print_const_qualifier_if_has_one(const Decl* node)
 {
     if (auto method_node{dynamic_cast<const clang::CXXMethodDecl*>(node)}; method_node != nullptr)
         if (method_node->isConst())
-            std::cout << " const";
+            output_stream << " const";
+}
+
+std::string DefinitionPrinter::get() const
+{
+    return output_stream.str();
 }
 
 } // namespace detail
@@ -95,6 +99,11 @@ DefinitionGenerator::DefinitionGenerator(FileWithDeclaration f, LineWithDeclarat
     printer{f, l}, matcher{functionDecl().bind("function declaration")}
 {
     addMatcher(matcher, &printer);
+}
+
+std::string DefinitionGenerator::get() const
+{
+    return printer.get();
 }
 
 } // namespace CppTinyRefactor
