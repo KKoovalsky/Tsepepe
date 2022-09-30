@@ -16,8 +16,8 @@ using namespace CppTinyRefactor;
 
 int main(int argc, const char** argv)
 {
-    OptionCategory cat("my-tool options");
-    auto ExpectedParser = CommonOptionsParser::create(argc, argv, cat);
+    OptionCategory cat("Function Definition Generator options");
+    auto ExpectedParser = CommonOptionsParser::create(argc, argv, cat, NumOccurrencesFlag::OneOrMore, "MAKAPAKA");
     if (!ExpectedParser)
     {
         // Fail gracefully for unsupported options.
@@ -30,6 +30,6 @@ int main(int argc, const char** argv)
     ClangTool Tool(OptionsParser.getCompilations(), OptionsParser.getSourcePathList());
     Tool.setDiagnosticConsumer(&diagnostic_consumer);
 
-    DefinitionGenerator generator{FileWithDeclaration{OptionsParser.getSourcePathList()[0]}, LineWithDeclaration{61}};
+    DefinitionGenerator generator{FileWithDeclaration{OptionsParser.getSourcePathList()[0]}, LineWithDeclaration{3}};
     return Tool.run(newFrontendActionFactory(&generator).get());
 }
