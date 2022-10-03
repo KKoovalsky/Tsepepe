@@ -327,3 +327,14 @@ Feature: Generates function definitions
         void Class::foo(unsigned int number, std::string, std::vector<std::string> strings)
         """
         And No errors are emitted
+
+    Scenario: Raises error if no definition found
+        Given Header file with content
+        """
+        struct Class
+        {
+            void foo();
+        };
+        """
+        When Method definition is generated from declaration at line 1
+        Then Error is raised

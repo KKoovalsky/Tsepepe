@@ -1,8 +1,9 @@
 import os
+import re
 import behave
 import subprocess
 from behave.runner import Context
-from hamcrest import assert_that, equal_to, empty
+from hamcrest import assert_that, equal_to, empty, not_
 from features.helpers.file import File
 from features.helpers.utils import get_tool_path, get_result
 from features.helpers.tool_result import ToolResult
@@ -80,3 +81,10 @@ def step_impl(context):
     result = get_result(context)
     assert_that(result.stderr, empty())
     assert_that(result.return_code, equal_to(0))
+
+
+@then("Error is raised")
+def step_impl(context):
+    result = get_result(context)
+    assert_that(result.return_code, not_(equal_to(0)))
+
