@@ -2,6 +2,7 @@
  * @file	tool.cpp
  * @brief	The main app entry for the function definition generator.
  */
+#include <filesystem>
 #include <iostream>
 
 #include <clang/Basic/Diagnostic.h>
@@ -12,6 +13,8 @@
 
 using namespace clang;
 using namespace clang::tooling;
+
+namespace fs = std::filesystem;
 
 using namespace CppTinyRefactor;
 
@@ -25,6 +28,11 @@ int main(int argc, const char** argv)
     }
 
     auto declaration_location{cmd_parser.get_function_declaration_location()};
+
+    // Replace potentially relative dir to a normalized absolute one.
+    auto file{fs::absolute(declaration_location.file).lexically_normal().string()};
+    declaration_location.file = file;
+
     ClangTool tool(cmd_parser.get_compilation_database(), declaration_location.file);
 
     IgnoringDiagConsumer diagnostic_consumer;
