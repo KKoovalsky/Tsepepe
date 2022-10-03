@@ -8,7 +8,7 @@ from features.helpers.utils import get_tool_path, get_result
 from features.helpers.tool_result import ToolResult
 
 
-@given("Header File With Content")
+@given("Header file with content")
 def step_impl(context: Context):
     count = context.unnamed_file_count
     context.unnamed_file_count += 1
@@ -19,8 +19,8 @@ def step_impl(context: Context):
     context.created_files.append(file)
 
 
-@when("Method Definition Is Generated From Declaration At Line {line}")
-def step_impl(context, line):
+@when("Method definition is generated from declaration at line {line}")
+def step_impl(context, line: int):
     if len(context.created_files) == 0:
         raise RuntimeError(
             (
@@ -28,7 +28,6 @@ def step_impl(context, line):
                 'Use "Given" expression to define a header file.'
             )
         )
-
     tool_path = get_tool_path(context)
     header_file_path = context.created_files[-1].path
     cmd = [tool_path, context.comp_db.path, header_file_path, line]

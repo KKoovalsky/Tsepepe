@@ -2,14 +2,14 @@ Feature: Generates function definitions
 
     Scenario: From basic method declaration
 
-        Given Header File With Content
+        Given Header file with content
             """
             class SomeClass
             {
                 unsigned int foo();
             };
             """
-        When Method Definition Is Generated From Declaration At Line 3
+        When Method definition is generated from declaration at line 3
         Then Stdout contains
             """
             unsigned int SomeClass::foo()
@@ -18,7 +18,7 @@ Feature: Generates function definitions
 
     Scenario: From declaration returning a nested type
 
-        Given Header File With Content
+        Given Header file with content
             """
             class Foo
             {
@@ -29,7 +29,7 @@ Feature: Generates function definitions
                 Bar yolo();
             };
             """
-        When Method Definition Is Generated From Declaration At Line 7
+        When Method definition is generated from declaration at line 7
         Then Stdout contains
             """
             Foo::Bar Foo::yolo()
