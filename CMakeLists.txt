@@ -12,9 +12,16 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(TSEPEPE_ENABLE_TESTING "Enable testing of this project" OFF)
+
 find_package(LLVM 14 REQUIRED)
 find_package(Clang REQUIRED)
 
 add_compile_options(-Wall)
 
 add_subdirectory(function_definition_generator)
+
+if(TSEPEPE_ENABLE_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
