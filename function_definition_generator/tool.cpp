@@ -16,7 +16,7 @@ using namespace clang::tooling;
 
 namespace fs = std::filesystem;
 
-using namespace CppTinyRefactor;
+using namespace Tsepepe;
 
 int main(int argc, const char** argv)
 {

@@ -13,7 +13,7 @@
 
 #include "function_declaration_location.hpp"
 
-namespace CppTinyRefactor
+namespace Tsepepe
 {
 
 namespace detail
@@ -63,6 +63,6 @@ class DefinitionGenerator : public clang::ast_matchers::MatchFinder
     detail::DefinitionPrinter printer;
     clang::ast_matchers::DeclarationMatcher matcher;
 };
-}; // namespace CppTinyRefactor
+}; // namespace Tsepepe
 
 #endif /* DEFINITION_GENERATOR_HPP */

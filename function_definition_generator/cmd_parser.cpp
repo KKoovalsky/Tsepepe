@@ -12,7 +12,7 @@
 
 namespace fs = std::filesystem;
 
-namespace CppTinyRefactor
+namespace Tsepepe
 {
 
 DefinitionGeneratorCmdParser::DefinitionGeneratorCmdParser(int argc, const char** argv) : status{validate(argc, argv)}
@@ -158,4 +158,4 @@ void DefinitionGeneratorCmdParser::dump_streams()
     std::cout << out_stream.str();
 }
 
-} // namespace CppTinyRefactor
+} // namespace Tsepepe

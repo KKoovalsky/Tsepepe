@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace CppTinyRefactor
+namespace Tsepepe
 {
 
 struct FunctionDeclarationLocation
@@ -16,6 +16,6 @@ struct FunctionDeclarationLocation
     unsigned line;
 };
 
-} // namespace CppTinyRefactor
+} // namespace Tsepepe
 
 #endif /* FUNCTION_DECLARATION_LOCATION_HPP */

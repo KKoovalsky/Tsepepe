@@ -11,7 +11,7 @@
 
 #include "function_declaration_location.hpp"
 
-namespace CppTinyRefactor
+namespace Tsepepe
 {
 
 class DefinitionGeneratorCmdParser
@@ -66,6 +66,6 @@ class DefinitionGeneratorCmdParser
     std::unique_ptr<clang::tooling::CompilationDatabase> compilation_database_ptr;
 };
 
-} // namespace CppTinyRefactor
+} // namespace Tsepepe
 
 #endif /* CMD_PARSER_HPP */

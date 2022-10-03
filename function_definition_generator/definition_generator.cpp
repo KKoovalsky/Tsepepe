@@ -13,7 +13,7 @@
 using namespace clang;
 using namespace clang::ast_matchers;
 
-namespace CppTinyRefactor
+namespace Tsepepe
 {
 
 namespace detail
@@ -147,4 +147,4 @@ std::string DefinitionGenerator::get() const
     return printer.get();
 }
 
-} // namespace CppTinyRefactor
+} // namespace Tsepepe
