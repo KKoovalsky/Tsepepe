@@ -4,6 +4,7 @@
  */
 
 #include <experimental/iterator>
+#include <regex>
 
 #include <clang/Lex/Lexer.h>
 
@@ -49,8 +50,6 @@ void DefinitionPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult&
     print_const_qualifier_if_has_one(node);
     print_ref_qualifier_if_has_one(node);
     print_noexcept_qualifier_if_has_one(node, source_manager);
-
-    output_stream << std::endl;
 }
 
 void DefinitionPrinter::print_return_type_if_any(const Decl* node)
@@ -117,7 +116,22 @@ std::string DefinitionPrinter::source_range_content_to_string(const clang::Sourc
     auto temp_end{source_range.getEnd()};
     auto end{Lexer::getLocForEndOfToken(temp_end, 0, source_manager, lang_options)};
 
-    return std::string(source_manager.getCharacterData(begin), source_manager.getCharacterData(end));
+    std::string result_raw(source_manager.getCharacterData(begin), source_manager.getCharacterData(end));
+    if (result_raw.empty())
+        return result_raw;
+
+    std::regex re{"\\s\\s+"};
+    auto result{std::regex_replace(result_raw, re, " ")};
+
+    auto is_space{[](unsigned char c) {
+        return std::isspace(c);
+    }};
+
+    auto first_non_ws_it{std::find_if_not(result.begin(), result.end(), is_space)};
+    result.erase(result.begin(), first_non_ws_it);
+    auto last_non_ws_it{std::find_if_not(result.rbegin(), result.rend(), is_space)};
+    result.erase(last_non_ws_it.base(), result.end());
+    return result;
 }
 
 } // namespace detail

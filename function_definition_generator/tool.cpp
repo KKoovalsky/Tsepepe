@@ -47,7 +47,7 @@ int main(int argc, const char** argv)
         return 1;
     } else
     {
-        std::cout << generator.get() << std::endl;
+        std::cout << generator.get();
     }
     return return_code;
 }

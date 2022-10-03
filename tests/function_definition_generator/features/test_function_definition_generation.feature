@@ -308,3 +308,22 @@ Feature: Generates function definitions
         """
         And No errors are emitted
 
+    Scenario: From multiline declaration
+        Given Header file with content
+        """
+        #include <string>
+        #include <vector>
+        
+        struct Class
+        {
+            void foo(unsigned int number,
+                     std::string,
+                     std::vector<std::string> strings);
+        };
+        """
+        When Method definition is generated from declaration at line 6
+        Then Stdout contains
+        """
+        void Class::foo(unsigned int number, std::string, std::vector<std::string> strings)
+        """
+        And No errors are emitted

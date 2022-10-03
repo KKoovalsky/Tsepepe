@@ -69,10 +69,10 @@ def step_impl(context, filename: str, line: int):
 
 
 @then("Stdout contains")
-def step_impl(context):
+def step_impl(context: Context):
     expected_stdout = context.text
-    result = get_result(context)
-    assert_that(result.stdout.rstrip(), equal_to(expected_stdout))
+    stdout = get_result(context).stdout
+    assert_that(stdout, equal_to(expected_stdout))
 
 
 @then("No errors are emitted")
