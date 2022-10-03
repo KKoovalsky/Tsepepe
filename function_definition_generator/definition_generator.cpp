@@ -5,6 +5,8 @@
 
 #include <experimental/iterator>
 
+#include <clang/Lex/Lexer.h>
+
 #include "definition_generator.hpp"
 
 using namespace clang;
@@ -17,7 +19,7 @@ namespace detail
 {
 
 DefinitionPrinter::DefinitionPrinter(FunctionDeclarationLocation loc) :
-    declaration_location{std::move(loc)}, printing_policy(LangOptions())
+    declaration_location{std::move(loc)}, printing_policy(lang_options)
 {
     printing_policy.SuppressTagKeyword = 1;
 }
@@ -43,8 +45,10 @@ void DefinitionPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult&
 
     print_return_type_if_any(node);
     print_name(node);
-    print_parameters(node);
+    print_parameters(node, source_manager);
     print_const_qualifier_if_has_one(node);
+    print_ref_qualifier_if_has_one(node);
+    print_noexcept_qualifier_if_has_one(node, source_manager);
 
     output_stream << std::endl;
 }
@@ -60,24 +64,13 @@ void DefinitionPrinter::print_name(const Decl* node)
     output_stream << node->getQualifiedNameAsString();
 }
 
-void DefinitionPrinter::print_parameters(const Decl* node)
+void DefinitionPrinter::print_parameters(const Decl* node, const clang::SourceManager& source_manager)
 {
-    std::vector<std::string> params_stringified;
-    params_stringified.reserve(node->parameters().size());
-
-    for (auto param : node->parameters())
-    {
-        auto type{param->getType().getAsString(printing_policy)};
-        auto name{param->getNameAsString()};
-
-        std::string param_as_string{type + ' ' + name};
-        params_stringified.emplace_back(std::move(param_as_string));
-    }
-
     output_stream << '(';
-    std::copy(std::begin(params_stringified),
-              std::end(params_stringified),
-              std::experimental::make_ostream_joiner(output_stream, ", "));
+
+    if (auto param_source_range{node->getParametersSourceRange()}; param_source_range.isValid())
+        output_stream << source_range_content_to_string(param_source_range, source_manager);
+
     output_stream << ')';
 }
 
@@ -88,9 +81,43 @@ void DefinitionPrinter::print_const_qualifier_if_has_one(const Decl* node)
             output_stream << " const";
 }
 
+void DefinitionPrinter::print_ref_qualifier_if_has_one(const Decl* node)
+{
+    auto method_node{dynamic_cast<const clang::CXXMethodDecl*>(node)};
+    if (method_node == nullptr)
+        return;
+
+    auto ref_qualifier{method_node->getRefQualifier()};
+    if (ref_qualifier == RefQualifierKind::RQ_LValue)
+        output_stream << " &";
+    else if (ref_qualifier == RefQualifierKind::RQ_RValue)
+        output_stream << " &&";
+}
+
+void DefinitionPrinter::print_noexcept_qualifier_if_has_one(const Decl* node,
+                                                            const clang::SourceManager& source_manager)
+{
+    auto source_range{node->getExceptionSpecSourceRange()};
+    if (source_range.isInvalid())
+        return;
+
+    output_stream << " ";
+    output_stream << source_range_content_to_string(source_range, source_manager);
+}
+
 std::string DefinitionPrinter::get() const
 {
     return output_stream.str();
+}
+
+std::string DefinitionPrinter::source_range_content_to_string(const clang::SourceRange& source_range,
+                                                              const clang::SourceManager& source_manager) const
+{
+    auto begin{source_range.getBegin()};
+    auto temp_end{source_range.getEnd()};
+    auto end{Lexer::getLocForEndOfToken(temp_end, 0, source_manager, lang_options)};
+
+    return std::string(source_manager.getCharacterData(begin), source_manager.getCharacterData(end));
 }
 
 } // namespace detail

@@ -34,11 +34,16 @@ class DefinitionPrinter final : public clang::ast_matchers::MatchFinder::MatchCa
 
     void print_return_type_if_any(const Decl*);
     void print_name(const Decl*);
-    void print_parameters(const Decl*);
+    void print_parameters(const Decl*, const clang::SourceManager&);
     void print_const_qualifier_if_has_one(const Decl*);
+    void print_ref_qualifier_if_has_one(const Decl*);
+    void print_noexcept_qualifier_if_has_one(const Decl* node, const clang::SourceManager&);
+
+    std::string source_range_content_to_string(const clang::SourceRange&, const clang::SourceManager&) const;
 
     FunctionDeclarationLocation declaration_location;
 
+    clang::LangOptions lang_options;
     clang::PrintingPolicy printing_policy;
 
     std::ostringstream output_stream;
