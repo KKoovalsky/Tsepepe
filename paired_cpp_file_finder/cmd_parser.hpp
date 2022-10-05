@@ -5,19 +5,14 @@
 #ifndef CMD_PARSER_HPP
 #define CMD_PARSER_HPP
 
-#include <string>
 #include <variant>
+
+#include "input.hpp"
 
 namespace Tsepepe
 {
 namespace PairedCppFileFinder
 {
-
-struct Input
-{
-    std::string project_directory;
-    std::string cpp_file;
-};
 
 using ReturnCode = int;
 
