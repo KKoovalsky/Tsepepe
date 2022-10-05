@@ -126,9 +126,9 @@ bool DefinitionGeneratorCmdParser::is_help_requested(int argc, const char** argv
 void DefinitionGeneratorCmdParser::print_usage(const char* program_path)
 {
     out_stream << "USAGE:\n\t" << program_path << " COMP_DB_DIR SOURCE_FILE DECL_LINE\n\n";
-    out_stream << "DESCRIPTION:\n\tGenerates function definition from a declaration found in the SOURCE_FILE at line "
-                  "DECL_LINE."
-               << std::endl;
+    out_stream
+        << "DESCIPTION:\n\tGenerates function definition from a declaration found in the SOURCE_FILE at line DECL_LINE."
+        << std::endl;
     out_stream << "\tNeeds the compilation database that can be found under the COMP_DB_DIR directory." << std::endl;
 }
 
