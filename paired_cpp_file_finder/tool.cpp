@@ -2,6 +2,7 @@
  * @file	tool.cpp
  * @brief	Entry point for the paired C++ file finder tool.
  */
+#include <iostream>
 
 #include "cmd_parser.hpp"
 
@@ -14,5 +15,7 @@ int main(int argc, const char* argv[])
         return std::get<ReturnCode>(input_or_return_code);
 
     auto input{std::get<Input>(input_or_return_code)};
+    std::cout << "Root: " << input.project_directory << std::endl;
+    std::cout << "C++ file: " << input.cpp_file << std::endl;
     return 0;
 }

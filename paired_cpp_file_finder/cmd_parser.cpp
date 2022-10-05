@@ -2,14 +2,25 @@
  * @file	cmd_parser.cpp
  * @brief	Implements the command line parsing for the C++ paired file finder.
  */
+#include <exception>
+#include <filesystem>
 #include <iostream>
+#include <string_view>
 
 #include "cmd_parser.hpp"
+
+namespace fs = std::filesystem;
 
 // --------------------------------------------------------------------------------------------------------------------
 // Helper declaration
 // --------------------------------------------------------------------------------------------------------------------
+struct Error : std::runtime_error
+{
+    using std::runtime_error::runtime_error;
+};
+
 static void print_usage(int argc, const char** argv);
+static void validate_path_exists(std::string_view name, const fs::path&);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
@@ -19,14 +30,68 @@ namespace Tsepepe::PairedCppFileFinder
 
 std::variant<Input, ReturnCode> parse_cmd(int argc, const char** argv)
 {
+    std::string first_argument(argv[1]);
+    if (first_argument == "-h" or first_argument == "--help")
+    {
+        print_usage(argc, argv);
+        return ReturnCode{0};
+    }
+
     if (argc != 3)
     {
-        std::cout << "ERROR: Invalid number of arguments!" << std::endl;
+        std::cerr << "ERROR: Invalid number of arguments!\n" << std::endl;
         print_usage(argc, argv);
         return ReturnCode{1};
     }
 
-    return Input{};
+    fs::path project_root{argv[1]};
+    if (not fs::exists(project_root))
+    {
+        std::cerr << "ERROR: Project root directory: " << project_root << " does not exist!\n" << std::endl;
+        return ReturnCode{1};
+    }
+
+    project_root = fs::canonical(project_root);
+
+    fs::path cpp_file_path{argv[2]};
+    if (cpp_file_path.is_absolute())
+    {
+        if (not fs::exists(cpp_file_path))
+        {
+            std::cerr << "ERROR: C++ file: " << cpp_file_path << " does not exist!\n" << std::endl;
+            return ReturnCode{1};
+        }
+
+        cpp_file_path = fs::canonical(project_root);
+
+        auto [root_end, _] = std::mismatch(std::begin(project_root), std::end(project_root), std::begin(cpp_file_path));
+        if (root_end != std::end(project_root))
+        {
+            std::cerr << "ERROR: C++ file: " << cpp_file_path << " is not inside: " << project_root << "\n"
+                      << std::endl;
+            return ReturnCode{1};
+        }
+    } else
+    {
+        auto cpp_file_full_path{project_root / cpp_file_path};
+        if (not fs::exists(cpp_file_full_path))
+        {
+            std::cerr << "ERROR: C++ file: " << cpp_file_full_path << " does not exist!\n" << std::endl;
+            return ReturnCode{1};
+        }
+        cpp_file_path = cpp_file_full_path;
+    }
+
+    static constexpr std::string_view allowed_extensions[]{".cpp", ".cxx", ".cc", ".h", ".hpp", ".hh"};
+    auto match_it{
+        std::find(std::begin(allowed_extensions), std::end(allowed_extensions), cpp_file_path.extension().string())};
+    if (match_it == std::end(allowed_extensions))
+    {
+        std::cerr << "ERROR: File: " << cpp_file_path << " is not a C++ file!\n" << std::endl;
+        return ReturnCode{1};
+    }
+
+    return Input{.project_directory = project_root, .cpp_file = cpp_file_path};
 }
 
 }; // namespace Tsepepe::PairedCppFileFinder
@@ -86,4 +151,13 @@ static void print_usage(int argc, const char** argv)
                  "\n\tThe result outputted to stdout is:\n"
                  "\t\t/root/dir/to/project/some_dir1/foo.hpp\n"
               << std::endl;
+}
+
+static void validate_path_exists(std::string_view name, fs::path path)
+{
+    if (not fs::exists(path))
+    {
+        auto msg{(std::ostringstream{} << "ERROR: " << name << ": " << path << " does not exist!").str()};
+        throw Error{std::move(msg)};
+    }
 }
