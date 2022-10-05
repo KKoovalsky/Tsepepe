@@ -21,6 +21,11 @@ struct Error : std::runtime_error
 
 static void print_usage(int argc, const char** argv);
 static void validate_path_exists(std::string_view name, const fs::path&);
+static void validate_path_in_directory(const fs::path& root, const fs::path& potentially_nested);
+static void validate_is_cpp_file(const fs::path& file);
+
+//! Turns relative paths to absolute, and fixes all "..". For absolute paths fixes ".." only.
+static fs::path normalize(const fs::path&);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
@@ -30,8 +35,7 @@ namespace Tsepepe::PairedCppFileFinder
 
 std::variant<Input, ReturnCode> parse_cmd(int argc, const char** argv)
 {
-    std::string first_argument(argv[1]);
-    if (first_argument == "-h" or first_argument == "--help")
+    if (std::string first_argument(argv[1]); first_argument == "-h" or first_argument == "--help")
     {
         print_usage(argc, argv);
         return ReturnCode{0};
@@ -44,54 +48,28 @@ std::variant<Input, ReturnCode> parse_cmd(int argc, const char** argv)
         return ReturnCode{1};
     }
 
-    fs::path project_root{argv[1]};
-    if (not fs::exists(project_root))
+    try
     {
-        std::cerr << "ERROR: Project root directory: " << project_root << " does not exist!\n" << std::endl;
+        validate_path_exists("Project root directory", argv[1]);
+        auto project_root{normalize(argv[1])};
+        fs::path cpp_file_path{argv[2]};
+        if (cpp_file_path.is_absolute())
+        {
+            validate_path_exists("C++ file", cpp_file_path);
+            cpp_file_path = normalize(cpp_file_path);
+            validate_path_in_directory(project_root, cpp_file_path);
+        } else // C++ file path is relative ...
+        {
+            cpp_file_path = project_root / cpp_file_path;
+            validate_path_exists("C++ file", cpp_file_path);
+        }
+        validate_is_cpp_file(cpp_file_path);
+        return Input{.project_directory = project_root, .cpp_file = cpp_file_path};
+    } catch (const Error& e)
+    {
+        std::cerr << e.what() << std::endl;
         return ReturnCode{1};
     }
-
-    project_root = fs::canonical(project_root);
-
-    fs::path cpp_file_path{argv[2]};
-    if (cpp_file_path.is_absolute())
-    {
-        if (not fs::exists(cpp_file_path))
-        {
-            std::cerr << "ERROR: C++ file: " << cpp_file_path << " does not exist!\n" << std::endl;
-            return ReturnCode{1};
-        }
-
-        cpp_file_path = fs::canonical(project_root);
-
-        auto [root_end, _] = std::mismatch(std::begin(project_root), std::end(project_root), std::begin(cpp_file_path));
-        if (root_end != std::end(project_root))
-        {
-            std::cerr << "ERROR: C++ file: " << cpp_file_path << " is not inside: " << project_root << "\n"
-                      << std::endl;
-            return ReturnCode{1};
-        }
-    } else
-    {
-        auto cpp_file_full_path{project_root / cpp_file_path};
-        if (not fs::exists(cpp_file_full_path))
-        {
-            std::cerr << "ERROR: C++ file: " << cpp_file_full_path << " does not exist!\n" << std::endl;
-            return ReturnCode{1};
-        }
-        cpp_file_path = cpp_file_full_path;
-    }
-
-    static constexpr std::string_view allowed_extensions[]{".cpp", ".cxx", ".cc", ".h", ".hpp", ".hh"};
-    auto match_it{
-        std::find(std::begin(allowed_extensions), std::end(allowed_extensions), cpp_file_path.extension().string())};
-    if (match_it == std::end(allowed_extensions))
-    {
-        std::cerr << "ERROR: File: " << cpp_file_path << " is not a C++ file!\n" << std::endl;
-        return ReturnCode{1};
-    }
-
-    return Input{.project_directory = project_root, .cpp_file = cpp_file_path};
 }
 
 }; // namespace Tsepepe::PairedCppFileFinder
@@ -153,11 +131,38 @@ static void print_usage(int argc, const char** argv)
               << std::endl;
 }
 
-static void validate_path_exists(std::string_view name, fs::path path)
+static void validate_path_exists(std::string_view name, const fs::path& path)
 {
     if (not fs::exists(path))
     {
         auto msg{(std::ostringstream{} << "ERROR: " << name << ": " << path << " does not exist!").str()};
+        throw Error{std::move(msg)};
+    }
+}
+
+static fs::path normalize(const fs::path& path)
+{
+    return fs::absolute(path).lexically_normal();
+}
+
+static void validate_path_in_directory(const fs::path& root, const fs::path& potentially_nested)
+{
+    auto relative{fs::relative(potentially_nested, root)};
+    if (relative.empty() or relative.string().starts_with(".."))
+    {
+        auto msg{
+            (std::ostringstream{} << "ERROR: Path: " << potentially_nested << " is not inside: " << root << "!").str()};
+        throw Error{std::move(msg)};
+    }
+}
+
+static void validate_is_cpp_file(const fs::path& file)
+{
+    static constexpr std::string_view allowed_extensions[]{".cpp", ".cxx", ".cc", ".h", ".hpp", ".hh"};
+    auto match_it{std::find(std::begin(allowed_extensions), std::end(allowed_extensions), file.extension())};
+    if (match_it == std::end(allowed_extensions))
+    {
+        auto msg{(std::ostringstream{} << "ERROR: File: " << file << " is not a C++ file!").str()};
         throw Error{std::move(msg)};
     }
 }
