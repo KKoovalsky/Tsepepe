@@ -1,6 +1,6 @@
-add_executable(tsepepe_definition_generator definition_generator.cpp tool.cpp cmd_parser.cpp)
+add_executable(tsepepe_function_definition_generator definition_generator.cpp tool.cpp cmd_parser.cpp)
 
-target_include_directories(tsepepe_definition_generator PRIVATE ${LLVM_INCLUDE_DIR})
-target_link_libraries(tsepepe_definition_generator PRIVATE LLVMSupport clangTooling)
+target_include_directories(tsepepe_function_definition_generator PRIVATE ${LLVM_INCLUDE_DIR})
+target_link_libraries(tsepepe_function_definition_generator PRIVATE LLVMSupport clangTooling)
 
-target_compile_options(tsepepe_definition_generator PRIVATE -Wno-deprecated-enum-enum-conversion)
+target_compile_options(tsepepe_function_definition_generator PRIVATE -Wno-deprecated-enum-enum-conversion)
