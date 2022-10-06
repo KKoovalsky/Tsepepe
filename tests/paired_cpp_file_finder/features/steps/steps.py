@@ -1,7 +1,7 @@
 import os
 import subprocess
 from pathlib import Path
-from hamcrest import assert_that, equal_to, empty, not_
+from hamcrest import assert_that, equal_to, not_, any_of, starts_with
 from features.helpers.utils import get_tool_path, get_result
 from features.helpers.tool_result import ToolResult
 
@@ -33,3 +33,22 @@ def step_impl(context, path: str):
     expected_stdout = os.path.join(context.working_directory, path)
     stdout = get_result(context).stdout.rstrip()
     assert_that(stdout, equal_to(expected_stdout))
+
+
+@then("Finding results are {path1} and {path2}")
+def step_impl(context, path1: str, path2: str):
+    full_path1 = os.path.join(context.working_directory, path1)
+    full_path2 = os.path.join(context.working_directory, path2)
+    expected_stdout1 = "{}\n{}\n".format(full_path1, full_path2)
+    expected_stdout2 = "{}\n{}\n".format(full_path2, full_path1)
+    stdout = get_result(context).stdout
+    assert_that(stdout, any_of(expected_stdout1, expected_stdout2))
+
+
+@then("No paired file found error is raised")
+def step_impl(context):
+    result = get_result(context)
+    return_code = result.return_code
+    stderr = result.stderr
+    assert_that(return_code, not_(equal_to(0)))
+    assert_that(stderr, starts_with("ERROR: No paired C++ file found"))
