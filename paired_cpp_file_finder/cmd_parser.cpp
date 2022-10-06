@@ -158,7 +158,7 @@ static void validate_path_in_directory(const fs::path& root, const fs::path& pot
 
 static void validate_is_cpp_file(const fs::path& file)
 {
-    static constexpr std::string_view allowed_extensions[]{".cpp", ".cxx", ".cc", ".h", ".hpp", ".hh"};
+    static constexpr std::string_view allowed_extensions[]{".cpp", ".cxx", ".cc", ".h", ".hpp", ".hh", ".hxx"};
     auto match_it{std::find(std::begin(allowed_extensions), std::end(allowed_extensions), file.extension())};
     if (match_it == std::end(allowed_extensions))
     {
