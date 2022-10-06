@@ -19,8 +19,7 @@ find_package(Clang REQUIRED)
 
 add_compile_options(-Wall)
 
-add_subdirectory(function_definition_generator)
-add_subdirectory(paired_cpp_file_finder)
+add_subdirectory(src)
 
 if(TSEPEPE_ENABLE_TESTING)
     enable_testing()

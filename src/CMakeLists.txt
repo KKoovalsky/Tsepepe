@@ -1,0 +1,2 @@
+add_subdirectory(function_definition_generator)
+add_subdirectory(paired_cpp_file_finder)
