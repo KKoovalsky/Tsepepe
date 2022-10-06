@@ -4,9 +4,9 @@ import behave
 import subprocess
 from behave.runner import Context
 from hamcrest import assert_that, equal_to, empty, not_
-from features.helpers.file import File
-from features.helpers.utils import get_tool_path, get_result
-from features.helpers.tool_result import ToolResult
+from helpers.file import File
+from helpers.utils import get_tool_path, get_result
+from helpers.tool_result import ToolResult
 
 
 @given("Header file with content")

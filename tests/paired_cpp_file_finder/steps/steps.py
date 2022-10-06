@@ -2,8 +2,8 @@ import os
 import subprocess
 from pathlib import Path
 from hamcrest import assert_that, equal_to, not_, any_of, starts_with
-from features.helpers.utils import get_tool_path, get_result
-from features.helpers.tool_result import ToolResult
+from helpers.utils import get_tool_path, get_result
+from helpers.tool_result import ToolResult
 
 
 @given("C++ file under path {path}")

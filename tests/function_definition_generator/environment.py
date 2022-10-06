@@ -1,5 +1,5 @@
 import os
-from features.helpers.compilation_database import CompilationDatabase
+from helpers.compilation_database import CompilationDatabase
 
 
 def before_all(context):
