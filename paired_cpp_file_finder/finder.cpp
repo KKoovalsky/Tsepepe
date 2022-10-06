@@ -65,7 +65,7 @@ static std::vector<fs::path> get_potential_paired_file_names(const fs::path& cpp
     }};
 
     auto stem{cpp_file_path.stem()};
-    const auto& extensions{is_source_file(cpp_file_path) ? source_file_extensions : header_file_extensions};
+    const auto& extensions{is_source_file(cpp_file_path) ? header_file_extensions : source_file_extensions};
 
     std::vector<fs::path> result;
     result.reserve(extensions.size());
