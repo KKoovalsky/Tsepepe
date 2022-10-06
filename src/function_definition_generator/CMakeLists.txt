@@ -4,3 +4,5 @@ target_include_directories(tsepepe_function_definition_generator PRIVATE ${LLVM_
 target_link_libraries(tsepepe_function_definition_generator PRIVATE LLVMSupport clangTooling)
 
 target_compile_options(tsepepe_function_definition_generator PRIVATE -Wno-deprecated-enum-enum-conversion)
+
+install(TARGETS tsepepe_function_definition_generator)
