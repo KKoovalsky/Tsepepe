@@ -11,3 +11,4 @@
 
 1. Run python3 -r requirements.txt (TODO: generate).
 2. bear
+3. gcc-12
