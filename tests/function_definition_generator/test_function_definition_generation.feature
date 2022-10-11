@@ -356,6 +356,40 @@ Feature: Generates function definitions
         """
         And No errors are emitted
 
+    Scenario: Skips default parameter
+        Given Header file with content
+        """
+        struct Class
+        {
+            void foo(unsigned int i, bool do_yolo = true);
+        };
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        void Class::foo(unsigned int i, bool do_yolo)
+        """
+        And No errors are emitted
+
+    Scenario: Skips multiple default parameters
+        Given Header file with content
+        """
+        struct Class
+        {
+            struct Nested
+            {
+            };
+
+            void foo(Nested, unsigned i, bool do_yolo = false, std::string s= "bang", float val =2.4f);
+        };
+        """
+        When Method definition is generated from declaration at line 7
+        Then Stdout contains
+        """
+        void Class::foo(Nested, unsigned i, bool do_yolo, std::string s, float val)
+        """
+        And No errors are emitted
+
     Scenario: Raises error if no definition found
         Given Header file with content
         """
@@ -366,3 +400,4 @@ Feature: Generates function definitions
         """
         When Method definition is generated from declaration at line 1
         Then Error is raised
+

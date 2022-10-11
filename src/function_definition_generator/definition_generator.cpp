@@ -68,7 +68,11 @@ void DefinitionPrinter::print_parameters(const Decl* node, const clang::SourceMa
     output_stream << '(';
 
     if (auto param_source_range{node->getParametersSourceRange()}; param_source_range.isValid())
-        output_stream << source_range_content_to_string(param_source_range, source_manager);
+    {
+        auto parameters_as_is{source_range_content_to_string(param_source_range, source_manager)};
+        std::regex default_param_regex{"\\s*=\\s*.*?(,|$)"};
+        output_stream << std::regex_replace(parameters_as_is, default_param_regex, "$1");
+    }
 
     output_stream << ')';
 }
