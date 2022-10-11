@@ -44,7 +44,7 @@ void DefinitionPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult&
     if (node->isImplicit())
         return;
 
-    print_return_type_if_any(node);
+    print_return_type_if_any(node, source_manager);
     print_name(node);
     print_parameters(node, source_manager);
     print_const_qualifier_if_has_one(node);
@@ -52,9 +52,9 @@ void DefinitionPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult&
     print_noexcept_qualifier_if_has_one(node, source_manager);
 }
 
-void DefinitionPrinter::print_return_type_if_any(const Decl* node)
+void DefinitionPrinter::print_return_type_if_any(const Decl* node, const clang::SourceManager& source_manager)
 {
-    if (auto kind{node->getKind()}; kind != Decl::Kind::CXXConstructor and kind != Decl::Kind::CXXDestructor)
+    if (has_explicit_return_type(node, source_manager))
         output_stream << node->getReturnType().getAsString(printing_policy) << ' ';
 }
 
@@ -132,6 +132,13 @@ std::string DefinitionPrinter::source_range_content_to_string(const clang::Sourc
     auto last_non_ws_it{std::find_if_not(result.rbegin(), result.rend(), is_space)};
     result.erase(last_non_ws_it.base(), result.end());
     return result;
+}
+
+bool DefinitionPrinter::has_explicit_return_type(const Decl* node, const clang::SourceManager& source_manager) const
+{
+    auto return_type_as_written_in_code{
+        source_range_content_to_string(node->getReturnTypeSourceRange(), source_manager)};
+    return not return_type_as_written_in_code.empty();
 }
 
 } // namespace detail

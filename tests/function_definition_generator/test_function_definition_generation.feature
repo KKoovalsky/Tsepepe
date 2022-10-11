@@ -341,6 +341,21 @@ Feature: Generates function definitions
         """
         And No errors are emitted
 
+    Scenario: From operator overload which has no explicit return type
+        Given Header file with content
+        """
+        struct Class
+        {
+            operator bool();
+        };
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        Class::operator bool()
+        """
+        And No errors are emitted
+
     Scenario: Raises error if no definition found
         Given Header file with content
         """
