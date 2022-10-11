@@ -202,6 +202,19 @@ Feature: Generates function definitions
         And No errors are emitted
 
 
+    Scenario: From declaration returning a bool
+        Given Header file with content
+        """
+        bool baz();
+        """
+        When Method definition is generated from declaration at line 1
+        Then Stdout contains
+        """
+        bool baz()
+        """
+        And No errors are emitted
+
+
     Scenario: From declaration inside a namespace
         Given Header file with content
         """

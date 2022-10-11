@@ -22,7 +22,7 @@ namespace detail
 DefinitionPrinter::DefinitionPrinter(FunctionDeclarationLocation loc) :
     declaration_location{std::move(loc)}, printing_policy(lang_options)
 {
-    printing_policy.SuppressTagKeyword = 1;
+    printing_policy.adjustForCPlusPlus();
 }
 
 void DefinitionPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult& result)
