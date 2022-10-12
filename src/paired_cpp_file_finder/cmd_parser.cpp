@@ -2,11 +2,11 @@
  * @file	cmd_parser.cpp
  * @brief	Implements the command line parsing for the C++ paired file finder.
  */
+#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <iostream>
 #include <string_view>
-#include <algorithm>
 
 #include "cmd_parser.hpp"
 
@@ -21,6 +21,7 @@ struct Error : std::runtime_error
 };
 
 static void print_usage(int argc, const char** argv);
+static bool is_help_requested(int argc, const char** argv);
 static void validate_path_exists(std::string_view name, const fs::path&);
 static void validate_path_in_directory(const fs::path& root, const fs::path& potentially_nested);
 static void validate_is_cpp_file(const fs::path& file);
@@ -36,7 +37,7 @@ namespace Tsepepe::PairedCppFileFinder
 
 std::variant<Input, ReturnCode> parse_cmd(int argc, const char** argv)
 {
-    if (std::string first_argument(argv[1]); first_argument == "-h" or first_argument == "--help")
+    if (is_help_requested(argc, argv))
     {
         print_usage(argc, argv);
         return ReturnCode{0};
@@ -130,6 +131,14 @@ static void print_usage(int argc, const char** argv)
                  "\n\tThe result outputted to stdout is:\n"
                  "\t\t/root/dir/to/project/some_dir1/foo.hpp\n"
               << std::endl;
+}
+
+static bool is_help_requested(int argc, const char** argv)
+{
+    if (argc <= 1)
+        return false;
+    std::string first_argument(argv[1]);
+    return first_argument == "-h" or first_argument == "--help";
 }
 
 static void validate_path_exists(std::string_view name, const fs::path& path)
