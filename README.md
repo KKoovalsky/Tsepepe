@@ -8,7 +8,7 @@ A collection of C++ refactoring tools (WIP), provided as binaries.
 # Build requirements
 
 * GCC 12.1.0+ (clang-14 has been tried, with no luck - fails on compiling the mix of std::filesystem iterators
-with views),
+with views)
 * CMake 3.22
 * `libclang-14-dev` and `libllvm-14-dev`
 
@@ -32,9 +32,9 @@ database of the code, because it works on top of the libclang's C++ AST traversa
 
 It is used in such a way:
 ```
-tsepepe_function_definition_generator \
-    <path to directory with compilation database>
-    <path to the C++ file with declaration>
+tsepepe_function_definition_generator                    \
+    <path to directory with compilation database>        \
+    <path to the C++ file with declaration>              \
     <line with the code where the declaration is found>
 ```
 
@@ -54,7 +54,7 @@ class SomeClass
 ```
 And compilation database in the current directory; when invoking:
 ```
-tsepepe_function_definition_generator . some_header.hpp 3 # The declaration of foo() is in the 3rd line.
+tsepepe_function_definition_generator . some_header.hpp 5 # The declaration of foo() is in the 5th line.
 ```
 The tool will output:
 ```
@@ -75,7 +75,9 @@ name and the return type, which might be a custom type.
 
 Invoke it like that:
 ```
-tsepepe_paired_cpp_file_finder <project root directory> <path to the C++ for which the paired file will be found>
+tsepepe_paired_cpp_file_finder                                  \
+    <project root directory>                                    \
+    <path to the C++ for which the paired file will be found>
 ```
 
 Tries to find a corresponding (paired) C++ file for the project found under the specified root.
@@ -100,6 +102,7 @@ Allowed extensions are:
 Some examples:
 
 1.
+
     </root/dir/to/project>
                 |
                 |---- some_dir
@@ -121,6 +124,7 @@ The result outputted to stdout is:
 ---
 
 2.
+
     </root/dir/to/project>
                 |
                 |---- some_dir1
@@ -142,6 +146,7 @@ The result outputted to stdout is:
 ---
 
 3.
+
     </root/dir/to/project>
                 |
                 |---- some_dir1
