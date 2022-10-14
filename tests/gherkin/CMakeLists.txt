@@ -18,3 +18,4 @@ find_program(BEHAVE behave REQUIRED)
 
 AddBehaveTest(function_definition_generator)
 AddBehaveTest(paired_cpp_file_finder)
+AddBehaveTest(abstract_class_finder)
