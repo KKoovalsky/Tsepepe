@@ -5,11 +5,12 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include <regex>
-#include <string_view>
+#include <string>
+
+#include "regex_wrapper.hpp"
 
 namespace Tsepepe::utils
 {
-std::regex class_name_to_header_file_regex(std::string_view class_name);
+RegexWrapper class_name_to_header_file_regex(std::string class_name);
 };
 #endif /* UTILS_HPP */
