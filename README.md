@@ -171,7 +171,7 @@ The result outputted to stdout is:
 
 Requirements:
 
-1. Run: `pip3 install -r tests/requirements.txt`.
+1. Run: `pip3 install -r tests/gherkin/requirements.txt`.
 2. Install `bear` tool.
 
 Run:
