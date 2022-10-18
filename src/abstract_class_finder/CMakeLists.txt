@@ -1,7 +1,7 @@
-add_executable(tsepepe_abstract_class_finder tool.cpp)
+add_executable(tsepepe_abstract_class_finder tool.cpp cmd_parser.cpp finder.cpp)
 
 target_include_directories(tsepepe_abstract_class_finder PRIVATE ${LLVM_INCLUDE_DIR})
-target_link_libraries(tsepepe_abstract_class_finder PRIVATE LLVMSupport clangTooling)
+target_link_libraries(tsepepe_abstract_class_finder PRIVATE LLVMSupport clangTooling tsepepe_utils)
 
 target_compile_options(tsepepe_abstract_class_finder PRIVATE -Wno-deprecated-enum-enum-conversion)
 
