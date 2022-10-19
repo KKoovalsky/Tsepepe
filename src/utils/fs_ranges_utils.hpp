@@ -11,7 +11,7 @@
 #include <functional>
 #include <ranges>
 
-namespace Tsepepe::utils
+namespace Tsepepe::utils::fs
 {
 
 namespace fs = std::filesystem;
@@ -138,6 +138,15 @@ namespace views
 detail::directories_filter_range_adaptor directories_filter;
 }
 
-} // namespace Tsepepe::utils
+template<typename Range>
+std::vector<fs::path> to_paths(Range& range)
+{
+    std::vector<fs::path> result;
+    result.reserve(8);
+    std::ranges::copy(range, std::back_inserter(result));
+    return result;
+}
+
+} // namespace Tsepepe::utils::fs
 
 #endif /* FS_RANGES_UTILS_HPP */

@@ -24,9 +24,6 @@ bool is_command_help_requested(int argc, const char** argv);
 std::unique_ptr<clang::tooling::CompilationDatabase>
 parse_compilation_database(const std::filesystem::path& directory_with_compilation_database);
 
-//! Throws when the path doesn't exist.
-std::filesystem::path parse_and_validate_path(const std::filesystem::path& path);
-
 }; // namespace Tsepepe::utils
 
 #endif /* UTILS_HPP */

@@ -5,6 +5,7 @@
 
 #include <iostream>
 
+#include "filesystem_utils.hpp"
 #include "utils.hpp"
 
 #include "cmd_parser.hpp"

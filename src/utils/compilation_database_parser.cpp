@@ -3,6 +3,7 @@
  * @brief	Defines the compilation database parsing utility.
  */
 
+#include "filesystem_utils.hpp"
 #include "utils.hpp"
 
 namespace Tsepepe::utils

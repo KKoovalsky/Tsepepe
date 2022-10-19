@@ -18,15 +18,6 @@ namespace Tsepepe::AbstractClassFinder
 using ReturnCode = int;
 ReturnCode find(const Input& input);
 
-class Finder : public clang::ast_matchers::MatchFinder
-{
-  public:
-    Finder(Input input);
-
-  private:
-    Tsepepe::utils::MatchValidator validator;
-};
-
 } // namespace Tsepepe::AbstractClassFinder
 
 #endif /* FINDER_HPP */
