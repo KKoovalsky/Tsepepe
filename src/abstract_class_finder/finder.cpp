@@ -4,6 +4,7 @@
  */
 
 #include <algorithm>
+#include <fstream>
 #include <ranges>
 #include <regex>
 
@@ -38,6 +39,7 @@ namespace Tsepepe::AbstractClassFinder
 // --------------------------------------------------------------------------------------------------------------------
 static bool try_find_in_matching_files(const Input& input);
 static bool try_find_in_any_header(const Input& input);
+static bool has_class(const fs::path& file, const std::string& class_name);
 static bool has_abstract_class(const fs::path& header, const CompilationDatabase&, const std::string& class_name);
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -48,7 +50,9 @@ bool find_abstract_class(Files&& files, const Input& input)
 {
     for (auto file : files)
     {
-        if (has_abstract_class(file, *input.compilation_database_ptr, input.class_name))
+        // Firstly, perform normal text-driven check, to not employ slow libclang abstract class check straight away.
+        if (has_class(file, input.class_name)
+            and has_abstract_class(file, *input.compilation_database_ptr, input.class_name))
         {
             std::cout << file.path().string();
             return true;
@@ -99,6 +103,19 @@ static bool try_find_in_any_header(const Input& input)
     }};
     auto headers{fs::recursive_directory_iterator{input.project_root} | std::views::filter(is_header_file)};
     return find_abstract_class(headers, input);
+}
+
+static bool has_class(const fs::path& file, const std::string& class_name)
+{
+    std::regex class_declaration_regex{"(^|\\s+)(struct|class)\\s+" + class_name + "\\b"};
+    std::ifstream fstream(file);
+    std::string line;
+    while (std::getline(fstream, line))
+    {
+        if (std::regex_search(line, class_declaration_regex))
+            return true;
+    }
+    return false;
 }
 
 static bool
