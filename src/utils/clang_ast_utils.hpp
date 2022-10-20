@@ -43,6 +43,10 @@ struct MatchValidator : MatchCounter
     };
 };
 
+std::string source_range_content_to_string(const clang::SourceRange& source_range,
+                                           const clang::SourceManager& source_manager,
+                                           const clang::LangOptions&);
+
 } // namespace Tsepepe::utils::clang_ast
 
 #endif /* CLANG_AST_UTILS_HPP */
