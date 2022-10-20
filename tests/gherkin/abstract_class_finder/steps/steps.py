@@ -1,5 +1,8 @@
 import os
+import subprocess
+from hamcrest import assert_that, equal_to, empty, not_
 import helpers.utils as utils
+from helpers.tool_result import ToolResult
 
 
 @given('Some dummy abstract class "{class_name}" under path "{path}"')
@@ -39,13 +42,31 @@ def step_impl(context, path: str):
 
 @when('Abstract class "{class_name}" is tried to be found')
 def step_impl(context, class_name: str):
-    raise NotImplementedError(
-        'STEP: When Abstract class "TheClass" is tried to be found'
+    tool_path = utils.get_tool_path(context)
+    root = context.working_directory
+    cmd = [tool_path, root, root, class_name]
+    cmd_result = subprocess.run(cmd, capture_output=True)
+    context.result = ToolResult(
+        cmd_result.stdout, cmd_result.stderr, cmd_result.returncode
     )
 
 
 @then('Path "{path}" is returned')
+def step_impl(context, path):
+    stdout = utils.get_result(context).stdout.strip()
+    expected_stdout = os.path.join(context.working_directory, path)
+    assert_that(stdout, equal_to(expected_stdout))
+
+
+@then("No error is raised")
 def step_impl(context):
-    raise NotImplementedError(
-        'STEP: Then Path "some/dir2/the_class.hpp" is returned'
-    )
+    result = utils.get_result(context)
+    assert_that(result.return_code, equal_to(0))
+    assert_that(result.stderr, empty())
+
+
+@then("No match is found")
+def step_impl(context):
+    result = utils.get_result(context)
+    assert_that(result.return_code, not_(equal_to(0)))
+    assert_that(result.stderr, not_(empty()))
