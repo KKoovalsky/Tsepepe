@@ -2,26 +2,24 @@
  * @file	finder.cpp
  * @brief	Defines the Abstract Class Finder.
  */
-
-#include <algorithm>
-#include <fstream>
 #include <ranges>
-#include <regex>
+#include <string>
 
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
 #include <clang/Tooling/Tooling.h>
 
-#include <iostream>
+#include <boost/process.hpp>
 
-#include "clang_ast_utils.hpp"
+#include <range/v3/range/conversion.hpp>
+
 #include "finder.hpp"
-#include "utils.hpp"
 
 using namespace clang;
 using namespace clang::tooling;
 
 namespace fs = std::filesystem;
+namespace views = std::ranges::views;
 
 // --------------------------------------------------------------------------------------------------------------------
 // Helper AST definitions
@@ -37,85 +35,47 @@ namespace Tsepepe::AbstractClassFinder
 // --------------------------------------------------------------------------------------------------------------------
 // Helpers declaration
 // --------------------------------------------------------------------------------------------------------------------
-static bool try_find_in_matching_files(const Input& input);
-static bool try_find_in_any_header(const Input& input);
-static bool has_class(const fs::path& file, const std::string& class_name);
+static std::vector<fs::path> ripgrep_for_class_name(const fs::path& root, const std::string& class_name);
 static bool has_abstract_class(const fs::path& header, const CompilationDatabase&, const std::string& class_name);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Helper templates
 // --------------------------------------------------------------------------------------------------------------------
-template<typename Files>
-bool find_abstract_class(Files&& files, const Input& input)
-{
-    for (auto file : files)
-    {
-        // Firstly, perform normal text-driven check, to not employ slow libclang abstract class check straight away.
-        if (has_class(file, input.class_name)
-            and has_abstract_class(file, *input.compilation_database_ptr, input.class_name))
-        {
-            std::cout << file.path().string();
-            return true;
-        }
-    }
-
-    return false;
-}
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
 
-ReturnCode find(const Input& input)
+std::vector<fs::path> find(const Input& input)
 {
-    if (not try_find_in_matching_files(input))
-        if (not try_find_in_any_header(input))
-            return 1;
-    return 0;
+    auto files_having_searched_class{ripgrep_for_class_name(input.project_root, input.class_name)};
+    auto files_having_abstract_class{files_having_searched_class | views::filter([&](const fs::path& header) {
+                                         return has_abstract_class(
+                                             header, *input.compilation_database_ptr, input.class_name);
+                                     })
+                                     | ranges::to_vector};
+    return files_having_abstract_class;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
 // Helpers definition
 // --------------------------------------------------------------------------------------------------------------------
-static bool try_find_in_matching_files(const Input& input)
+static std::vector<fs::path> ripgrep_for_class_name(const fs::path& root, const std::string& class_name)
 {
-    auto matching_name_pattern{Tsepepe::utils::class_name_to_header_file_regex(input.class_name)};
-    std::regex matching_name_regex{matching_name_pattern, std::regex::ECMAScript | std::regex::icase};
-    auto make_file_name_matcher_by_regex{[](const std::regex& re) {
-        return [re](const fs::directory_entry& dir_entry) {
-            auto fname{dir_entry.path().filename().string()};
-            return std::regex_match(fname, re);
-        };
-    }};
+    std::string class_definition_regex{"(^|\\s+)(struct|class)\\s+" + class_name + "\\b"};
+    std::string command{"rg " + class_definition_regex + " " + root.string() + " -l"};
 
-    auto is_file_name_matching_regex{make_file_name_matcher_by_regex(matching_name_regex)};
-    auto header_files_matched_by_class_name{fs::recursive_directory_iterator{input.project_root}
-                                            | std::views::filter(is_file_name_matching_regex)};
+    std::vector<fs::path> result;
 
-    return find_abstract_class(header_files_matched_by_class_name, input);
-}
-
-static bool try_find_in_any_header(const Input& input)
-{
-    auto is_header_file{[](const fs::directory_entry& dir_entry) {
-        auto ext{dir_entry.path().extension().string()};
-        return ext == ".h" or ext == ".hpp" or ext == ".hh" or ext == ".hxx";
-    }};
-    auto headers{fs::recursive_directory_iterator{input.project_root} | std::views::filter(is_header_file)};
-    return find_abstract_class(headers, input);
-}
-
-static bool has_class(const fs::path& file, const std::string& class_name)
-{
-    std::regex class_declaration_regex{"(^|\\s+)(struct|class)\\s+" + class_name + "\\b"};
-    std::ifstream fstream(file);
+    using namespace boost::process;
+    ipstream pipe_stream;
+    child c{std::move(command), std_out > pipe_stream};
     std::string line;
-    while (std::getline(fstream, line))
-    {
-        if (std::regex_search(line, class_declaration_regex))
-            return true;
-    }
-    return false;
+    while (pipe_stream && std::getline(pipe_stream, line) && !line.empty())
+        result.emplace_back(std::move(line));
+    c.wait();
+
+    return result;
 }
 
 static bool

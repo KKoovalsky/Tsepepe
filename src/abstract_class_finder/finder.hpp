@@ -15,8 +15,7 @@
 namespace Tsepepe::AbstractClassFinder
 {
 
-using ReturnCode = int;
-ReturnCode find(const Input& input);
+std::vector<std::filesystem::path> find(const Input& input);
 
 } // namespace Tsepepe::AbstractClassFinder
 

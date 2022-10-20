@@ -3,6 +3,8 @@
  * @brief	Entry point for the abstract class finder tool.
  */
 
+#include <iostream>
+
 #include "cmd_parser.hpp"
 #include "finder.hpp"
 
@@ -10,16 +12,21 @@ using namespace Tsepepe::AbstractClassFinder;
 
 int main(int argc, const char* argv[])
 {
-    auto input{parse_cmd(argc, argv)};
-    if (std::holds_alternative<ReturnCode>(input))
-        return std::get<ReturnCode>(input);
+    auto input_or_return_code{parse_cmd(argc, argv)};
+    if (std::holds_alternative<ReturnCode>(input_or_return_code))
+        return std::get<ReturnCode>(input_or_return_code);
 
-    return find(std::get<Input>(input));
-    // Tsepepe::AbstractClassFinder::Finder finder{std::move(input)};
-    //
-    // ClangTool tool{*compilation_database_ptr, {header_file}};
-    //
-    // auto return_code{tool.run(newFrontendActionFactory(&finder).get())};
-    // std::cout << "Match found?: " << validator.is_match_found() << std::endl;
-    // return return_code;
+    const auto& input{std::get<Input>(input_or_return_code)};
+    auto matching_headers{find(input)};
+    if (matching_headers.empty())
+    {
+        std::cout << "ERROR! No abstract class named " << input.class_name << " under root: " << input.project_root
+                  << std::endl;
+        return 1;
+    }
+
+    for (auto header_path : matching_headers)
+        std::cout << header_path.string() << std::endl;
+
+    return 0;
 }
