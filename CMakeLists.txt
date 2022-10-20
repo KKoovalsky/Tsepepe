@@ -19,6 +19,7 @@ find_package(Clang REQUIRED)
 
 add_compile_options(-Wall)
 
+include(cmake/dependencies.cmake)
 add_subdirectory(src)
 
 if(TSEPEPE_ENABLE_TESTING)
