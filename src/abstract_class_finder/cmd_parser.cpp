@@ -5,8 +5,10 @@
 
 #include <iostream>
 
+#include "clang_ast_utils.hpp"
+#include "cmd_utils.hpp"
+#include "error.hpp"
 #include "filesystem_utils.hpp"
-#include "utils.hpp"
 
 #include "cmd_parser.hpp"
 
@@ -22,7 +24,7 @@ static void print_usage(int argc, const char** argv);
 // --------------------------------------------------------------------------------------------------------------------
 std::variant<Input, ReturnCode> Tsepepe::AbstractClassFinder::parse_cmd(int argc, const char** argv)
 {
-    if (Tsepepe::utils::is_command_help_requested(argc, argv))
+    if (Tsepepe::utils::cmd::is_command_help_requested(argc, argv))
     {
         print_usage(argc, argv);
         return ReturnCode{0};
@@ -37,8 +39,8 @@ std::variant<Input, ReturnCode> Tsepepe::AbstractClassFinder::parse_cmd(int argc
     try
     {
         Input result;
-        result.compilation_database_ptr = Tsepepe::utils::parse_compilation_database(argv[1]);
-        result.project_root = Tsepepe::utils::parse_and_validate_path(argv[2]);
+        result.compilation_database_ptr = Tsepepe::utils::clang_ast::parse_compilation_database(argv[1]);
+        result.project_root = Tsepepe::utils::fs::parse_and_validate_path(argv[2]);
         result.class_name = argv[3];
         return result;
     } catch (const Tsepepe::Error& e)

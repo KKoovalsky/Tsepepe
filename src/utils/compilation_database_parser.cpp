@@ -3,15 +3,17 @@
  * @brief	Defines the compilation database parsing utility.
  */
 
+#include "clang_ast_utils.hpp"
+#include "error.hpp"
 #include "filesystem_utils.hpp"
-#include "utils.hpp"
 
-namespace Tsepepe::utils
+namespace Tsepepe::utils::clang_ast
 {
 
 std::unique_ptr<clang::tooling::CompilationDatabase>
 parse_compilation_database(const std::filesystem::path& directory_with_compilation_database)
 {
+    using namespace Tsepepe::utils::fs;
     parse_and_validate_path(directory_with_compilation_database);
     auto comp_db_path{directory_with_compilation_database / "compile_commands.json"};
     parse_and_validate_path(comp_db_path);
@@ -30,4 +32,4 @@ parse_compilation_database(const std::filesystem::path& directory_with_compilati
     return r;
 }
 
-} // namespace Tsepepe::utils
+} // namespace Tsepepe::utils::clang_ast

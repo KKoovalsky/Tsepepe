@@ -7,12 +7,12 @@
 
 #include <filesystem>
 
-namespace Tsepepe::utils
+namespace Tsepepe::utils::fs
 {
 
 //! Throws when the path doesn't exist.
 std::filesystem::path parse_and_validate_path(const std::filesystem::path& path);
 
-} // namespace Tsepepe::utils
+} // namespace Tsepepe::utils::fs
 
 #endif /* FILESYSTEM_UTILS_HPP */

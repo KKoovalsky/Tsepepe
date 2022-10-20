@@ -20,7 +20,7 @@ int main(int argc, const char* argv[])
     auto matching_headers{find(input)};
     if (matching_headers.empty())
     {
-        std::cout << "ERROR! No abstract class named " << input.class_name << " under root: " << input.project_root
+        std::cerr << "ERROR! No abstract class named " << input.class_name << " under root: " << input.project_root
                   << std::endl;
         return 1;
     }

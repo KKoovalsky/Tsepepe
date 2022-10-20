@@ -5,7 +5,7 @@
 
 #include <cstring>
 
-namespace Tsepepe::utils
+namespace Tsepepe::utils::cmd
 {
 
 bool is_command_help_requested(int argc, const char** argv)
@@ -21,4 +21,4 @@ bool is_command_help_requested(int argc, const char** argv)
     return false;
 }
 
-} // namespace Tsepepe::utils
+} // namespace Tsepepe::utils::cmd

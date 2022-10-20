@@ -5,11 +5,18 @@
 #ifndef CLANG_AST_UTILS_HPP
 #define CLANG_AST_UTILS_HPP
 
+#include <filesystem>
+
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
+#include <clang/Tooling/CompilationDatabase.h>
 
-namespace Tsepepe::utils
+namespace Tsepepe::utils::clang_ast
 {
+
+//! Throws if no compilation database is found under the specified directory, or when the directory doesn't exist.
+std::unique_ptr<clang::tooling::CompilationDatabase>
+parse_compilation_database(const std::filesystem::path& directory_with_compilation_database);
 
 struct MatchCounter : clang::ast_matchers::MatchFinder::MatchCallback
 {
@@ -36,6 +43,6 @@ struct MatchValidator : MatchCounter
     };
 };
 
-} // namespace Tsepepe::utils
+} // namespace Tsepepe::utils::clang_ast
 
 #endif /* CLANG_AST_UTILS_HPP */

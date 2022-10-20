@@ -85,7 +85,7 @@ has_abstract_class(const fs::path& header, const CompilationDatabase& comp_db, c
         ast_matchers::cxxRecordDecl(isAbstract(), ast_matchers::hasName(class_name)).bind("abstract class")};
 
     ast_matchers::MatchFinder finder;
-    Tsepepe::utils::MatchValidator validator;
+    Tsepepe::utils::clang_ast::MatchValidator validator;
     finder.addMatcher(abstract_class_matcher, &validator);
 
     ClangTool tool{comp_db, {header}};

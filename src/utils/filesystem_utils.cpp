@@ -3,16 +3,17 @@
  * @brief	Defines the filesystem utilities.
  */
 
-#include "utils.hpp"
+#include "filesystem_utils.hpp"
+#include "error.hpp"
 
-namespace fs = std::filesystem;
+namespace stdfs = std::filesystem;
 
-namespace Tsepepe::utils
+namespace Tsepepe::utils::fs
 {
 
 std::filesystem::path parse_and_validate_path(const std::filesystem::path& path)
 {
-    if (not fs::exists(path))
+    if (not stdfs::exists(path))
     {
         std::string msg;
         auto path_as_string{path.string()};
@@ -23,7 +24,7 @@ std::filesystem::path parse_and_validate_path(const std::filesystem::path& path)
         throw Tsepepe::Error{std::move(msg)};
     }
 
-    return fs::absolute(path).lexically_normal();
+    return stdfs::absolute(path).lexically_normal();
 }
 
-} // namespace Tsepepe::utils
+} // namespace Tsepepe::utils::fs

@@ -1,5 +1,4 @@
 add_library(tsepepe_utils STATIC 
-    class_name_to_header_file_name_regex.cpp
     compilation_database_parser.cpp
     filesystem_utils.cpp
     cmd_utils.cpp
