@@ -39,7 +39,6 @@ class MatchCollector : public ast::MatchFinder::MatchCallback
         std::regex overrider{"virtual\\s+(.*)(\\s+=\\s+0)"};
         auto override_declaration{std::regex_replace(declaration, overrider, "$1 override;")};
 
-        function_override_declarations.emplace_back(std::move(declaration));
         function_override_declarations.emplace_back(std::move(override_declaration));
     }
 
