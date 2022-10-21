@@ -23,11 +23,12 @@ def step_impl(context, file_name):
     File(path, file_content).create()
 
 
-@when('Pure virtual functions are extracted from class "{class_name}"')
-def step_impl(context, class_name: str):
-    count = context.unnamed_file_count - 1
-    fname = "header_{}.hpp".format(count)
-    header_path = os.path.join(context.working_directory, fname)
+@when(
+    "Pure virtual functions are extracted from "
+    'class "{class_name}" in file "{file_name}"'
+)
+def step_impl(context, class_name: str, file_name: str):
+    header_path = os.path.join(context.working_directory, file_name)
     tool_path = utils.get_tool_path(context)
     comp_db_dir = context.working_directory
     cmd = [tool_path, comp_db_dir, header_path, class_name]
@@ -37,9 +38,11 @@ def step_impl(context, class_name: str):
     )
 
 
-@when('Pure virtual functions are extracted from class "{class_name}" in file "{file_name}')
-def step_impl(context, class_name: str, file_name: str):
-    header_path = os.path.join(context.working_directory, file_name)
+@when('Pure virtual functions are extracted from class "{class_name}"')
+def step_impl(context, class_name: str):
+    count = context.unnamed_file_count - 1
+    fname = "header_{}.hpp".format(count)
+    header_path = os.path.join(context.working_directory, fname)
     tool_path = utils.get_tool_path(context)
     comp_db_dir = context.working_directory
     cmd = [tool_path, comp_db_dir, header_path, class_name]

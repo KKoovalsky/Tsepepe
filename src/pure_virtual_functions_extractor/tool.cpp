@@ -22,10 +22,14 @@ int main(int argc, const char* argv[])
                 .class_name{argv[3]}};
 
     auto override_declarations{extract(input)};
-    for (auto decl : override_declarations)
+    if (override_declarations.empty())
     {
-        std::cout << decl << std::endl;
+        std::cerr << "ERROR: no pure virtual functions found!" << std::endl;
+        return 1;
     }
+
+    for (auto decl : override_declarations)
+        std::cout << decl << std::endl;
 
     return 0;
 }
