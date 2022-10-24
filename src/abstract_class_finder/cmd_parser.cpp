@@ -58,10 +58,10 @@ static void print_usage(int argc, const char** argv)
     auto program_path{argv[0]};
     std::cout << "USAGE:\n\t" << program_path << " COMP_DB_DIR PROJECT_ROOT_DIR CLASS_NAME\n\n";
     std::cout << "DESCRIPTION:\n\tTries to find an abstract class with the name CLASS_NAME, under the root directory "
-                 "PROJECT_ROOT_DIR.\n\t";
-    std::cout << "Requires compilation database (compile_commands.json) put in COMP_DB_DIR directory.\n\t";
-    std::cout << "On success, prints out the header file where the abstract class is located.\n\n";
-    std::cout << "NOTE:\n\tripgrep tool is used to find the abstract class, thus the .gitignore patterns are used to"
+                 "PROJECT_ROOT_DIR.\n\t"
+                 "Requires compilation database (compile_commands.json) put in COMP_DB_DIR directory.\n\t"
+                 "On success, prints out the header file where the abstract class is located.\n\n"
+                 "NOTE:\n\tripgrep tool is used to find the abstract class, thus the .gitignore patterns are used to"
                  " skip git-ignored directories.\n"
               << std::endl;
 }
