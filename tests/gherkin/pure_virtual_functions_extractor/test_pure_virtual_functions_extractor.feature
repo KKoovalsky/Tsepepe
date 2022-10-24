@@ -130,5 +130,39 @@ Feature: Extracts pure virtual functions from abstract class and converts them t
     And No errors are emitted
 
   Scenario: Extracts and converts pure virtual functions from a class in a namespace
+    Given Header file with content
+      """
+      namespace Yolo{
+      struct SomeIface
+      {
+          virtual float gimme(int) = 0;
+          virtual ~SomeIface() = default;
+      };
+      }
+      """
+    When Pure virtual functions are extracted from class "SomeIface"
+    Then Stdout contains
+      """
+      float gimme(int) override;
+      """
+    And No errors are emitted
 
   Scenario: Extracts and converts pure virtual functions from a nested class
+
+    Given Header file with content
+      """
+      struct Yolo{
+      struct SomeIface
+      {
+          virtual float gimme(int) = 0;
+          virtual ~SomeIface() = default;
+      };
+      };
+      """
+    When Pure virtual functions are extracted from class "SomeIface"
+    Then Stdout contains
+      """
+      float gimme(int) override;
+      """
+    And No errors are emitted
+
