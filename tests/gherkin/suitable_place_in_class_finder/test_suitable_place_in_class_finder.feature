@@ -33,4 +33,5 @@ Feature: Finds suitable place in classes to put a new public function declaratio
     Scenario: In a struct with properties only
     Scenario: In a struct with few public methods
     Scenario: In an empty class
+    Scenario: In an empty class with the opening bracket on the same line as the class name
     Scenario: In a class with private section only
