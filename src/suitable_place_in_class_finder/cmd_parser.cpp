@@ -45,7 +45,7 @@ std::variant<Input, ReturnCode> parse_cmd(int argc, const char** argv)
         return result;
     } catch (const Tsepepe::Error& e)
     {
-        std::cerr << "ERROR: " << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
         return ReturnCode{1};
     }
 }
