@@ -27,7 +27,34 @@ Feature: Finds suitable place in classes to put a new public function declaratio
         Then Line number 2 is returned with indication of inserting a public section
 
     Scenario: In a class with public and private section, in that order
+        Given Header file with content
+        """
+
+        class Bumm
+        {
+        public:
+        private:
+        };
+
+        """
+        When Suitable place in class is searched for class "Bumm"
+        Then Line number 4 is returned
+
     Scenario: In a class with private and public section, in that order
+        Given Header file with content
+        """
+
+
+        class Bumm
+        {
+        private:
+        public:
+        };
+
+        """
+        When Suitable place in class is searched for class "Bumm"
+        Then Line number 6 is returned
+
     Scenario: In a class with public, private and one more public section, in that order
     Scenario: In an empty struct
     Scenario: In a struct with properties only

@@ -25,19 +25,22 @@ def step_impl(context, class_name: str):
     )
 
 
+@then(
+    "Line number {line_number} is returned with indication of inserting a"
+    " public section"
+)
+def step_impl(context, line_number: str):
+    result = utils.get_result(context)
+    stdout = result.stdout.rstrip()
+    assert_that(stdout, equal_to(line_number + "p"))
+    assert_that(result.return_code, equal_to(0))
+    assert_that(result.stderr, empty())
+
+
 @then("Line number {line_number} is returned")
 def step_impl(context, line_number: str):
     result = utils.get_result(context)
     stdout = result.stdout.rstrip()
     assert_that(stdout, equal_to(line_number))
-    assert_that(result.return_code, equal_to(0))
-    assert_that(result.stderr, empty())
-
-
-@then("Line number {line_number} is returned with indication of inserting a public section")
-def step_impl(context, line_number: str):
-    result = utils.get_result(context)
-    stdout = result.stdout.rstrip()
-    assert_that(stdout, equal_to(line_number + 'p'))
     assert_that(result.return_code, equal_to(0))
     assert_that(result.stderr, empty())

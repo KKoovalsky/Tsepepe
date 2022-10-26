@@ -126,7 +126,7 @@ class LineFinder : public ast::MatchFinder::MatchCallback
         }};
 
         auto get_line_nums_with_public_access_specifier_declarations{[&]() -> std::vector<unsigned> {
-            std::string command{"rg \"public\\s*:\" " + header_file.string()};
+            std::string command{"rg --line-number \"public\\s*:\" " + header_file.string()};
 
             using namespace boost::process;
             ipstream pipe_stream;
