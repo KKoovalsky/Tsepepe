@@ -62,7 +62,8 @@ class LineFinder : public ast::MatchFinder::MatchCallback
         } else
         {
             found_line_number = find_line_with_opening_bracket(node, source_manager);
-            is_public_section_needed = true;
+            if (not node->isStruct())
+                is_public_section_needed = true;
         }
     }
 
@@ -84,18 +85,18 @@ class LineFinder : public ast::MatchFinder::MatchCallback
   private:
     const CXXMethodDecl* find_last_public_method_in_first_public_chain(const CXXRecordDecl* record) const
     {
-        auto is_public_method{[](const CXXMethodDecl* method) {
-            return method->getAccess() == AccessSpecifier::AS_public;
+        auto is_public_explicit_method{[](const CXXMethodDecl* method) {
+            return method->getAccess() == AccessSpecifier::AS_public and not method->isImplicit();
         }};
 
-        auto is_not_public_method{[&](const CXXMethodDecl* method) {
-            return not is_public_method(method);
+        auto is_not_public_or_is_public_implicit_method{[&](const CXXMethodDecl* method) {
+            return not is_public_explicit_method(method);
         }};
 
         auto beg{record->method_begin()};
         auto end{record->method_end()};
 
-        auto first_public_method_it{std::ranges::find_if(beg, end, is_public_method)};
+        auto first_public_method_it{std::ranges::find_if(beg, end, is_public_explicit_method)};
         if (first_public_method_it == end)
             return nullptr;
 
@@ -104,7 +105,7 @@ class LineFinder : public ast::MatchFinder::MatchCallback
         auto last_public_method_in_first_public_method_chain_it{first_public_method_it};
         for (auto it{first_public_method_it}; it != end; ++it)
         {
-            if (is_not_public_method(*it) or it->isImplicit())
+            if (is_not_public_or_is_public_implicit_method(*it))
                 break;
             last_public_method_in_first_public_method_chain_it = it;
         }
