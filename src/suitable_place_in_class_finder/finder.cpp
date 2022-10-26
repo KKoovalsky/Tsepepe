@@ -99,7 +99,7 @@ class LineFinder : public ast::MatchFinder::MatchCallback
         if (first_public_method_it == end)
             return nullptr;
 
-        // Ideally, we could use find_if to find the first non-public method, and then use std::prev(), but the method
+        // Ideally, we could use find_if() to find the first non-public method, and then use std::prev(), but the method
         // range is a forward range.
         auto last_public_method_in_first_public_method_chain_it{first_public_method_it};
         for (auto it{first_public_method_it}; it != end; ++it)
