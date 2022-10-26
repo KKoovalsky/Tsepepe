@@ -6,14 +6,18 @@
 #define FINDER_HPP
 
 #include <optional>
+#include <string>
 
 #include "input.hpp"
 
 namespace Tsepepe::SuitablePlaceInClassFinder
 {
 
-using Line = unsigned;
-std::optional<Line> find(const Input&);
+/**
+ * @returns Maybe a line with additional 'p' sign, which means that line 'public:' must be added below the line, and
+ *          above the new content.
+ */
+std::optional<std::string> find(const Input&);
 
 }; // namespace Tsepepe::SuitablePlaceInClassFinder
 

@@ -62,12 +62,23 @@ class LineFinder : public ast::MatchFinder::MatchCallback
         } else
         {
             found_line_number = find_line_with_opening_bracket(node, source_manager);
+            is_public_section_needed = true;
         }
     }
 
-    std::optional<unsigned> get_result() const
+    std::optional<std::string> get_result() const
     {
-        return found_line_number;
+        if (!found_line_number)
+            return {};
+
+        std::string r;
+        r.reserve(16);
+        r = std::to_string(*found_line_number);
+
+        if (is_public_section_needed)
+            r.append("p");
+
+        return r;
     }
 
   private:
@@ -171,6 +182,8 @@ class LineFinder : public ast::MatchFinder::MatchCallback
     }
 
     std::optional<unsigned> found_line_number;
+    bool is_public_section_needed{false};
+
     clang::LangOptions lang_options;
     clang::PrintingPolicy printing_policy;
     fs::path header_file;
@@ -179,7 +192,7 @@ class LineFinder : public ast::MatchFinder::MatchCallback
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-std::optional<Tsepepe::SuitablePlaceInClassFinder::Line> Tsepepe::SuitablePlaceInClassFinder::find(const Input& input)
+std::optional<std::string> Tsepepe::SuitablePlaceInClassFinder::find(const Input& input)
 {
     auto class_matcher{ast_matchers::cxxRecordDecl(ast_matchers::hasName(input.class_name)).bind("class")};
 
