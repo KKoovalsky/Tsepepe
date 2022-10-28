@@ -1,0 +1,157 @@
+Initialize:
+{
+  "id": 1,
+  "jsonrpc": "2.0",
+  "method": "initialize",
+  "params": {
+    "capabilities": {
+      "textDocument": {
+        "codeAction": {
+          "codeActionLiteralSupport": {
+            "codeActionKind": {
+              "valueSet": [
+                "",
+                "quickfix",
+                "refactor",
+                "refactor.extract",
+                "refactor.inline",
+                "refactor.rewrite",
+                "source",
+                "source.organizeImports"
+              ]
+            }
+          }
+        },
+        "completion": {
+          "completionItem": {
+            "documentationFormat": [
+              "plaintext",
+              "markdown"
+            ]
+          },
+          "completionItemKind": {
+            "valueSet": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+          }
+        },
+        "documentSymbol": {
+          "hierarchicalDocumentSymbolSupport": false,
+          "labelSupport": false,
+          "symbolKind": {
+            "valueSet": [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 ]
+          }
+        },
+        "hover": {
+          "contentFormat": [
+            "plaintext",
+            "markdown"
+          ]
+        },
+        "inlay_hint": {},
+        "semanticTokens": {
+          "augmentSyntaxTokens": true,
+          "formats": [
+            "relative"
+          ],
+          "requests": {
+            "full": {
+              "delta": false
+            },
+            "range": true
+          },
+          "tokenModifiers": [],
+          "tokenTypes": [
+            "namespace",
+            "type",
+            "class",
+            "enum",
+            "interface",
+            "struct",
+            "typeParameter",
+            "parameter",
+            "variable",
+            "property",
+            "enumMember",
+            "event",
+            "function",
+            "method",
+            "member",
+            "macro",
+            "keyword",
+            "modifier",
+            "comment",
+            "string",
+            "number",
+            "regexp",
+            "operator"
+          ]
+        },
+        "signatureHelp": {
+          "signatureInformation": {
+            "documentationFormat": [
+              "plaintext",
+              "markdown"
+            ],
+            "parameterInformation": {
+              "labelOffsetSupport": true
+            }
+          }
+        },
+        "synchronization": {
+          "didSave": true
+        }
+      },
+      "workspace": {
+        "applyEdit": true,
+        "didChangeWatchedFiles": {
+          "dynamicRegistration": true
+        },
+        "symbol": {
+          "symbolKind": {
+            "valueSet": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26
+            ]
+          }
+        },
+        "workspaceEdit": {
+          "documentChanges": true
+        },
+        "workspaceFolders": true
+      }
+    },
+    "initializationOptions": {},
+    "processId": 52594,
+    "rootPath": "/home/kacper/Workspace/Tsepepe",
+    "rootUri": "file:///home/kacper/Workspace/Tsepepe",
+    "workspaceFolders": [
+      {
+        "name": "Tsepepe",
+        "uri": "file:///home/kacper/Workspace/Tsepepe"
+      }
+    ]
+  }
+}
