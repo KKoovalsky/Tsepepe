@@ -9,6 +9,14 @@ function(ProvideRangesV3)
 
 endfunction()
 
+function(ProvideNamedType)
+
+    FetchContent_Declare(
+        NamedType
+        GIT_REPOSITORY https://github.com/joboccara/NamedType.git
+        GIT_TAG 76668abe09807f92a695ee5e868f9719e888e65f
+    )
+    FetchContent_MakeAvailable(NamedType)
 
 function(ProvideUniversalCodeGrep)
 
