@@ -18,6 +18,8 @@ function(ProvideNamedType)
     )
     FetchContent_MakeAvailable(NamedType)
 
+endfunction()
+
 function(ProvideUniversalCodeGrep)
 
     find_library(libpcre NAMES pcre2-8 pcre2-16 pcre2-32 REQUIRED)
