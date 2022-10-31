@@ -1,5 +1,5 @@
 find_package(Catch2 3 REQUIRED)
-add_executable(tsepepe_lib_unit_test test_symbol_finder.cpp)
+add_executable(tsepepe_lib_unit_test test_codebase_grepper.cpp)
 target_link_libraries(tsepepe_lib_unit_test Catch2::Catch2WithMain tsepepe_lib)
 
 find_program(VALGRIND valgrind)

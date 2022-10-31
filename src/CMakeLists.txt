@@ -2,7 +2,6 @@ find_program(RIPGREP rg REQUIRED)
 
 find_package(Boost 1.74 REQUIRED COMPONENTS headers)
 ProvideRangesV3()
-ProvideUniversalCodeGrep()
 ProvideNamedType()
 find_program(RIPGREP rg REQUIRED)
 
@@ -16,7 +15,7 @@ add_subdirectory(full_class_name_expander)
 
 add_library(tsepepe_lib STATIC 
     src/implement_interface_code_action.cpp
-    src/symbol_finder.cpp
+    src/codebase_grepper.cpp
     src/directory_tree.cpp
 )
 target_include_directories(tsepepe_lib PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)

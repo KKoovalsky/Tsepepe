@@ -5,7 +5,6 @@
 
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 
 #include "directory_tree.hpp"
 
@@ -24,7 +23,6 @@ Tsepepe::DirectoryTree::~DirectoryTree()
 void Tsepepe::DirectoryTree::create_file(std::filesystem::path relative_path_from_root, std::string file_content)
 {
     auto path{root / relative_path_from_root};
-    std::cout << path << std::endl;
     fs::create_directories(path.parent_path());
     std::ofstream{path} << file_content;
 }
