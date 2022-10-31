@@ -2,6 +2,7 @@ find_program(RIPGREP rg REQUIRED)
 
 find_package(Boost 1.74 REQUIRED COMPONENTS headers)
 ProvideRangesV3()
+ProvideUniversalCodeGrep()
 
 add_subdirectory(utils)
 add_subdirectory(function_definition_generator)
