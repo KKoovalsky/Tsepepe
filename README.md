@@ -173,6 +173,8 @@ Requirements:
 
 1. Run: `pip3 install -r tests/gherkin/requirements.txt`.
 2. Install `bear` tool.
+3. `cucumber` command line tool. On Ubuntu can be installed with `apt`. It is a ruby tool, thus `gem` can also be used
+for that.
 
 Run:
 
