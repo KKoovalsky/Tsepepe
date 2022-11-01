@@ -20,4 +20,26 @@ function(ProvideNamedType)
 
 endfunction()
 
+function(ProvideCucumberCpp)
+    
+    option(CUKE_ENABLE_BOOST_TEST   "Enable Boost.Test framework for Cucumber-CPP" OFF)
+    option(CUKE_USE_STATIC_BOOST    "Statically link Boost (except boost::test) with Cucumber-CPP" OFF)
+    option(CUKE_USE_STATIC_GTEST    "Statically link Google Test with Cucumber-CPP" OFF)
+    option(CUKE_TESTS_E2E           "Enable end-to-end tests for Cucumber-CPP" OFF)
+    option(CUKE_TESTS_UNIT          "Enable unit tests for Cucumber-CPP" OFF)
+    option(CUKE_ENABLE_GTEST        "Enable Google Test framework for Cucumber-CPP" OFF)
+    option(CUKE_ENABLE_QT           "Enable Qt framework for Cucumber-CPP" OFF)
+
+    set(patch ${TSEPEPE_CMAKE_DIR}/0001_cucumber_cpp_fix_asio_std_exchange_error.patch)
+    FetchContent_Declare(
+        CucumberCpp
+        GIT_REPOSITORY https://github.com/cucumber/cucumber-cpp.git
+        GIT_TAG 15d73be1759d920206907793720d1e30902428df
+        PATCH_COMMAND git apply ${patch} || git apply ${patch} --reverse --check
+    )
+    FetchContent_MakeAvailable(CucumberCpp)
+
+endfunction()
+
 include(FetchContent)
+set(TSEPEPE_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
