@@ -35,6 +35,10 @@ function(ProvideCucumberCpp)
         CucumberCpp
         GIT_REPOSITORY https://github.com/cucumber/cucumber-cpp.git
         GIT_TAG 15d73be1759d920206907793720d1e30902428df
+        # We need this patch step, because we need Boost as well in Tsepepe project, and it leads to some weird
+        # behavior when resolving includes.
+        # The patch step will try to apply the patch, and in case it fails it will try to check if the reversed patch
+        # applies. If it does, then we know that the patch is correctly applied, thus the step is successful.
         PATCH_COMMAND git apply ${patch} || git apply ${patch} --reverse --check
     )
     FetchContent_MakeAvailable(CucumberCpp)
