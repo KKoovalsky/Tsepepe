@@ -1,0 +1,12 @@
+diff --git a/include/cucumber-cpp/internal/connectors/wire/WireServer.hpp b/include/cucumber-cpp/internal/connectors/wire/WireServer.hpp
+index 78b32c9..349bc8a 100644
+--- a/include/cucumber-cpp/internal/connectors/wire/WireServer.hpp
++++ b/include/cucumber-cpp/internal/connectors/wire/WireServer.hpp
+@@ -5,6 +5,7 @@
+ #include "ProtocolHandler.hpp"
+ 
+ #include <string>
++#include <utility>
+ 
+ #include <boost/asio.hpp>
+ 
