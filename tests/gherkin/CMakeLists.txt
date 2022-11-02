@@ -28,35 +28,6 @@ function(AddToolTest name)
 
 endfunction()
 
-# ! AddCppCucumberTest: creates a cucumber test with 'name', which must match the subdirectory with the test.
-function(AddCppCucumberTest name)
-
-    set(test_name tsepepe_cucumber_cpp_${name}_test)
-    add_executable(${test_name} ${name}/step_definitions/steps.cpp)
-    target_link_libraries(${test_name} tsepepe_lib cucumber-cpp)
-    target_compile_definitions(${test_name} PRIVATE -DCOMPILATION_DATABASE_DIR="${CMAKE_BINARY_DIR}")
-
-    set(wire_server_starter ${test_name}_wire_server_starter)
-    set(wire_server_stopper ${test_name}_wire_server_stopper)
-    set(wire_server ${test_name}_wire_server)
-    set(wire_server_pid_file ${CMAKE_CURRENT_BINARY_DIR}/${wire_server}.pid)
-    set(daemonizer ${CMAKE_CURRENT_LIST_DIR}/daemonizer.py)
-    set(daemon_name ${wire_server})
-
-    add_test(NAME ${wire_server_starter} COMMAND ${daemonizer} ${daemon_name} ${wire_server_pid_file} start
-                                                 $<TARGET_FILE:${test_name}>)
-    add_test(NAME ${wire_server_stopper} COMMAND ${daemonizer} ${daemon_name} ${wire_server_pid_file} stop)
-    add_test(
-        NAME ${test_name}
-        COMMAND cucumber ${name}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-
-    set_tests_properties(${wire_server_starter} PROPERTIES FIXTURES_SETUP ${wire_server})
-    set_tests_properties(${wire_server_stopper} PROPERTIES FIXTURES_CLEANUP ${wire_server})
-    set_tests_properties(${test_name} PROPERTIES FIXTURES_REQUIRED ${wire_server})
-
-endfunction()
-
 # ######################################################################################################################
 # Main script
 # ######################################################################################################################
@@ -68,8 +39,3 @@ AddToolTest(abstract_class_finder)
 AddToolTest(pure_virtual_functions_extractor)
 AddToolTest(suitable_place_in_class_finder)
 AddToolTest(full_class_name_expander)
-
-find_program(CUCUMBER cucumber REQUIRED)
-ProvideCucumberCpp()
-
-AddCppCucumberTest(implement_interface_code_action)
