@@ -39,16 +39,16 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::ImplementIntefaceCodeActionLi
     ast_units.reserve(4);
 }
 
-Tsepepe::FileContent Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(std::filesystem::path project_root,
-                                                                              FileContentConstRef,
-                                                                              InterfaceName iface_name_alias,
-                                                                              CursorPositionLine)
+Tsepepe::NewFileContent Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_root,
+                                                                                 FileContentConstRef,
+                                                                                 InterfaceName iface_name_alias,
+                                                                                 CursorPositionLine)
 {
     using namespace Tsepepe;
 
     const auto& iface_name{iface_name_alias.get()};
     std::string class_definition_regex{"\\b(struct|class)\\s+" + iface_name + "\\b"};
-    auto matches{codebase_grep(RootDirectory{project_root}, EcmaScriptPattern{class_definition_regex})};
+    auto matches{codebase_grep(std::move(project_root), EcmaScriptPattern{class_definition_regex})};
 
     const CXXRecordDecl* interface_declaration{nullptr};
     for (auto it{matches.begin()}; it != matches.end() and interface_declaration == nullptr; ++it)
