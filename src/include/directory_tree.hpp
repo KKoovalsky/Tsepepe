@@ -16,7 +16,7 @@ class DirectoryTree
     explicit DirectoryTree(std::filesystem::path root);
     ~DirectoryTree();
 
-    void create_file(std::filesystem::path relative_path_from_root, std::string file_content);
+    std::filesystem::path create_file(std::filesystem::path relative_path_from_root, std::string file_content);
     std::string load_file(std::filesystem::path relative_path_from_root);
 
   private:
