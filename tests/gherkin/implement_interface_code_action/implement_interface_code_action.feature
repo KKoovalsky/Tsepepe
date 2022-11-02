@@ -15,7 +15,7 @@ Feature: Code action allowing to generate code that makes a class implement an i
       {
       };
       """
-    When Implement interface code action is invoked for file "maker.hpp" with line at cursor <line>
+    When We want to implement "Runnable" interface for file "maker.hpp" with line at cursor <line> 
     Then The result is
       """
       #include "runnable.hpp"

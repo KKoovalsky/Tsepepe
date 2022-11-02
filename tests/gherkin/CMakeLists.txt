@@ -33,7 +33,8 @@ function(AddCppCucumberTest name)
 
     set(test_name tsepepe_cucumber_cpp_${name}_test)
     add_executable(${test_name} ${name}/step_definitions/steps.cpp)
-    target_link_libraries(${test_name} cucumber-cpp)
+    target_link_libraries(${test_name} tsepepe_lib cucumber-cpp)
+    target_compile_definitions(${test_name} PRIVATE -DCOMPILATION_DATABASE_DIR="${CMAKE_BINARY_DIR}")
 
     set(wire_server_starter ${test_name}_wire_server_starter)
     set(wire_server_stopper ${test_name}_wire_server_stopper)
