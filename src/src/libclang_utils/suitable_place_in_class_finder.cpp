@@ -40,9 +40,8 @@ Tsepepe::find_suitable_place_in_class_for_public_method(std::filesystem::path cp
     auto last_public_method_in_first_public_method_chain{find_last_public_method_in_first_public_chain(node)};
     if (last_public_method_in_first_public_method_chain != nullptr)
     {
-        auto past_end_source_loc{last_public_method_in_first_public_method_chain->getEndLoc()};
-        auto end_source_loc{Lexer::getLocForEndOfToken(past_end_source_loc, 0, source_manager, lang_options)};
-        return {.line = source_manager.getSpellingLineNumber(end_source_loc)};
+        auto end_source_loc{last_public_method_in_first_public_method_chain->getEndLoc()};
+        return {.line = source_manager.getPresumedLoc(end_source_loc).getLine()};
     } else if (auto maybe_first_public_section{
                    try_find_line_with_public_section(cpp_file, node, source_manager, lang_options)};
                maybe_first_public_section)

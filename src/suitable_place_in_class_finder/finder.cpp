@@ -27,11 +27,6 @@ namespace fs = std::filesystem;
 // --------------------------------------------------------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------------------------------------------------------
-AST_MATCHER_P(CXXRecordDecl, isMemberOf, std::string, name)
-{
-    return false;
-};
-
 class LineFinder : public ast::MatchFinder::MatchCallback
 {
   public:
@@ -51,10 +46,8 @@ class LineFinder : public ast::MatchFinder::MatchCallback
         auto last_public_method_in_first_public_method_chain{find_last_public_method_in_first_public_chain(node)};
         if (last_public_method_in_first_public_method_chain != nullptr)
         {
-            auto past_end_source_loc{last_public_method_in_first_public_method_chain->getEndLoc()};
-            auto end_source_loc{Lexer::getLocForEndOfToken(past_end_source_loc, 0, source_manager, lang_options)};
-            auto r{source_manager.getSpellingLineNumber(end_source_loc)};
-            found_line_number = r;
+            auto end_source_loc{last_public_method_in_first_public_method_chain->getEndLoc()};
+            found_line_number = source_manager.getPresumedLoc(end_source_loc).getLine();
         } else if (auto maybe_first_public_section{try_find_line_with_public_section(node, source_manager)};
                    maybe_first_public_section)
         {
