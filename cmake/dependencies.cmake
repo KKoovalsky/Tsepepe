@@ -21,8 +21,8 @@ function(ProvideNamedType)
 endfunction()
 
 function(ProvideCucumberCpp)
-    
-    option(CUKE_ENABLE_BOOST_TEST   "Enable Boost.Test framework for Cucumber-CPP" OFF)
+
+    option(CUKE_ENABLE_BOOST_TEST   "Enable Boost.Test framework for Cucumber-CPP" ON)
     option(CUKE_USE_STATIC_BOOST    "Statically link Boost (except boost::test) with Cucumber-CPP" OFF)
     option(CUKE_USE_STATIC_GTEST    "Statically link Google Test with Cucumber-CPP" OFF)
     option(CUKE_TESTS_E2E           "Enable end-to-end tests for Cucumber-CPP" OFF)
