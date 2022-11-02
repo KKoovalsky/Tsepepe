@@ -55,7 +55,7 @@ struct PresumedSourceRange
 
     bool is_line_inside(unsigned line_number)
     {
-        return begin.getLine() >= line_number and line_number <= end.getLine();
+        return begin.getLine() <= line_number and line_number <= end.getLine();
     }
 
   private:
