@@ -13,7 +13,12 @@ namespace Tsepepe
 
 struct PresumedSourceRange
 {
-    PresumedSourceRange() = default;
+    PresumedSourceRange() :
+        begin{nullptr, clang::FileID{}, 0, 0, clang::SourceLocation{}},
+        end{nullptr, clang::FileID{}, 0, 0, clang::SourceLocation{}}
+    {
+    }
+
     PresumedSourceRange(const clang::SourceManager& source_manager,
                         const clang::SourceLocation& begin_,
                         const clang::SourceLocation& end_) :
