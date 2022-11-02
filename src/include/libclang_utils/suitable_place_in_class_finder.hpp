@@ -5,7 +5,6 @@
 #ifndef FINDER_HPP
 #define FINDER_HPP
 
-#include "clang/Basic/LangOptions.h"
 #include <filesystem>
 
 #include <clang/AST/DeclCXX.h>
@@ -24,8 +23,7 @@ struct SuitablePublicMethodPlaceInCppFile
 
 SuitablePublicMethodPlaceInCppFile find_suitable_place_in_class_for_public_method(std::filesystem::path cpp_file,
                                                                                   const clang::CXXRecordDecl*,
-                                                                                  const clang::SourceManager&,
-                                                                                  const clang::LangOptions&);
+                                                                                  const clang::SourceManager&);
 
 }; // namespace Tsepepe
 

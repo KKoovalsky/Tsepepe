@@ -22,35 +22,29 @@ namespace fs = std::filesystem;
 // Private declaration
 // --------------------------------------------------------------------------------------------------------------------
 static const CXXMethodDecl* find_last_public_method_in_first_public_chain(const CXXRecordDecl*);
-static std::optional<unsigned> try_find_line_with_public_section(const fs::path& header_file,
-                                                                 const CXXRecordDecl*,
-                                                                 const SourceManager&,
-                                                                 const LangOptions&);
-static unsigned find_line_with_opening_bracket(const CXXRecordDecl*, const SourceManager&, const LangOptions&);
+static std::optional<unsigned>
+try_find_line_with_public_section(const fs::path& header_file, const CXXRecordDecl*, const SourceManager&);
+static unsigned find_line_with_opening_bracket(const CXXRecordDecl*, const SourceManager&);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-Tsepepe::SuitablePublicMethodPlaceInCppFile
-Tsepepe::find_suitable_place_in_class_for_public_method(std::filesystem::path cpp_file,
-                                                        const clang::CXXRecordDecl* node,
-                                                        const clang::SourceManager& source_manager,
-                                                        const clang::LangOptions& lang_options)
+Tsepepe::SuitablePublicMethodPlaceInCppFile Tsepepe::find_suitable_place_in_class_for_public_method(
+    std::filesystem::path cpp_file, const clang::CXXRecordDecl* node, const clang::SourceManager& source_manager)
 {
     auto last_public_method_in_first_public_method_chain{find_last_public_method_in_first_public_chain(node)};
     if (last_public_method_in_first_public_method_chain != nullptr)
     {
         auto end_source_loc{last_public_method_in_first_public_method_chain->getEndLoc()};
         return {.line = source_manager.getPresumedLoc(end_source_loc).getLine()};
-    } else if (auto maybe_first_public_section{
-                   try_find_line_with_public_section(cpp_file, node, source_manager, lang_options)};
+    } else if (auto maybe_first_public_section{try_find_line_with_public_section(cpp_file, node, source_manager)};
                maybe_first_public_section)
     {
         return {.line = *maybe_first_public_section};
     } else
     {
         SuitablePublicMethodPlaceInCppFile result;
-        result.line = find_line_with_opening_bracket(node, source_manager, lang_options);
+        result.line = find_line_with_opening_bracket(node, source_manager);
         result.is_public_section_needed = not node->isStruct();
         return result;
     }
@@ -91,13 +85,14 @@ static const CXXMethodDecl* find_last_public_method_in_first_public_chain(const 
 
 static std::optional<unsigned> try_find_line_with_public_section(const fs::path& header_file,
                                                                  const CXXRecordDecl* record,
-                                                                 const SourceManager& source_manager,
-                                                                 const LangOptions& lang_options)
+                                                                 const SourceManager& source_manager)
 {
     auto get_class_body_begin_end_lines{[&]() {
+        // FIXME: Use PresumedSourceRange instead of the clang::Lexer module.
         auto class_body_source_range{record->getSourceRange()};
         auto class_body_past_end_loc{class_body_source_range.getEnd()};
-        auto class_body_end_loc{Lexer::getLocForEndOfToken(class_body_past_end_loc, 0, source_manager, lang_options)};
+        auto class_body_end_loc{
+            Lexer::getLocForEndOfToken(class_body_past_end_loc, 0, source_manager, record->getLangOpts())};
         auto class_body_begin_line{source_manager.getSpellingLineNumber(class_body_source_range.getBegin())};
         auto class_body_end_line{source_manager.getSpellingLineNumber(class_body_end_loc)};
         return std::make_pair(class_body_begin_line, class_body_end_line);
@@ -141,14 +136,12 @@ static std::optional<unsigned> try_find_line_with_public_section(const fs::path&
         return {};
 }
 
-static unsigned find_line_with_opening_bracket(const CXXRecordDecl* record,
-                                               const SourceManager& source_manager,
-                                               const LangOptions& lang_options)
+static unsigned find_line_with_opening_bracket(const CXXRecordDecl* record, const SourceManager& source_manager)
 {
     auto location{record->getBeginLoc()};
     while (true)
     {
-        auto maybe_token{Lexer::findNextToken(location, source_manager, lang_options)};
+        auto maybe_token{Lexer::findNextToken(location, source_manager, record->getLangOpts())};
         if (not maybe_token)
             break;
 

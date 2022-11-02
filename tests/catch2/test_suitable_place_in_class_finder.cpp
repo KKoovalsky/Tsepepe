@@ -169,8 +169,6 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
 
     REQUIRE(node != nullptr);
 
-    auto result{find_suitable_place_in_class_for_public_method(
-        path, node, ast_unit->getSourceManager(), ast_unit->getLangOpts())};
-
+    auto result{find_suitable_place_in_class_for_public_method(path, node, ast_unit->getSourceManager())};
     REQUIRE(result == expected_result);
 }
