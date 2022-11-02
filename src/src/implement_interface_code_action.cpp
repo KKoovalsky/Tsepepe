@@ -46,7 +46,7 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::ImplementIntefaceCodeActionLi
 Tsepepe::NewFileContent
 Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_root,
                                                          FileContentConstRef file_content,
-                                                         InterfaceName iface_name_alias,
+                                                         InterfaceName iface_name,
                                                          CursorPositionLine cursor_position_line)
 {
     using namespace Tsepepe;
@@ -55,16 +55,9 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_r
     if (implementor_declaration == nullptr)
         throw BaseError{"No class/struct found under cursor!"};
 
-    const auto& iface_name{iface_name_alias.get()};
-    std::string class_definition_regex{"\\b(struct|class)\\s+" + iface_name + "\\b"};
-    auto matches{codebase_grep(std::move(project_root), EcmaScriptPattern{class_definition_regex})};
-
-    const CXXRecordDecl* interface_declaration{nullptr};
-    for (auto it{matches.begin()}; it != matches.end() and interface_declaration == nullptr; ++it)
-    {
-        build_and_append_ast_unit(it->path);
-        interface_declaration = find_interface(iface_name, *ast_units.back());
-    }
+    auto interface_declaration{find_interface(project_root.get(), iface_name.get())};
+    if (interface_declaration == nullptr)
+        throw BaseError{"No interface with the specified name found under the project root directory!"};
 
     return {};
 }
@@ -79,16 +72,28 @@ void Tsepepe::ImplementIntefaceCodeActionLibclangBased::build_and_append_ast_uni
 }
 
 const clang::CXXRecordDecl*
-Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_interface(const std::string& name, clang::ASTUnit& unit) const
+Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_interface(const fs::path& project_root,
+                                                                  const std::string& iface_name)
 {
-    auto abstract_class_matcher{
-        ast_matchers::cxxRecordDecl(isAbstract(), ast_matchers::hasName(name)).bind("abstract class")};
-    auto match_result{ast_matchers::match(abstract_class_matcher, unit.getASTContext())};
-    if (match_result.size() == 0)
-        return nullptr;
+    std::string class_definition_regex{"\\b(struct|class)\\s+" + iface_name + "\\b"};
+    auto file_matches{codebase_grep(RootDirectory(project_root), EcmaScriptPattern{class_definition_regex})};
 
-    const auto& first_match{match_result[0]};
-    return first_match.getNodeAs<CXXRecordDecl>("abstract class");
+    auto abstract_class_matcher{
+        ast_matchers::cxxRecordDecl(isAbstract(), ast_matchers::hasName(iface_name)).bind("abstract class")};
+
+    for (const auto& file_match : file_matches)
+    {
+        build_and_append_ast_unit(file_match.path);
+        auto& ast_unit{*ast_units.back()};
+        auto match_result{ast_matchers::match(abstract_class_matcher, ast_unit.getASTContext())};
+        if (match_result.size() == 0)
+            continue;
+
+        const auto& first_match{match_result[0]};
+        return first_match.getNodeAs<CXXRecordDecl>("abstract class");
+    }
+
+    return nullptr;
 }
 
 const clang::CXXRecordDecl*
