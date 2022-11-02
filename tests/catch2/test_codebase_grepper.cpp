@@ -8,8 +8,6 @@
 #include <catch2/matchers/catch_matchers_vector.hpp>
 #include <ostream>
 
-#include <iostream>
-
 #include "codebase_grepper.hpp"
 #include "directory_tree.hpp"
 
@@ -63,7 +61,7 @@ TEST_CASE("Finds strings within a project", "[CodebaseGrepper]")
                 THEN("A match is found")
                 {
                     REQUIRE_THAT(codebase_grep(root_dir, pattern),
-                                 Catch::Matchers::Equals(std::vector<GrepMatch>{
+                                 Catch::Matchers::UnorderedEquals(std::vector<GrepMatch>{
                                      {.path = current_path / "temp/dir2/piste.cpp", .line = 4, .column = 9},
                                      {.path = current_path / "temp/dirs/dir3/casta.cpp", .line = 6, .column = 1}}));
                 }
