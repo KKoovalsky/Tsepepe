@@ -15,6 +15,7 @@
 #include <clang/Tooling/CompilationDatabase.h>
 
 #include "common_types.hpp"
+#include "directory_tree.hpp"
 
 namespace Tsepepe
 {
@@ -34,10 +35,13 @@ class ImplementIntefaceCodeActionLibclangBased
 
   private:
     void build_and_append_ast_unit(const std::filesystem::path&);
+    const clang::CXXRecordDecl* find_implementor(const std::string& file_content, unsigned cursor_position_line);
     const clang::CXXRecordDecl* find_interface(const std::string& name, clang::ASTUnit&) const;
 
     std::shared_ptr<clang::tooling::CompilationDatabase> compilation_database;
     std::vector<std::unique_ptr<clang::ASTUnit>> ast_units;
+    DirectoryTree tsepepe_temp_directory_tree;
+    DirectoryTree this_code_action_directory_tree;
 };
 
 }; // namespace Tsepepe

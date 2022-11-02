@@ -48,6 +48,11 @@ struct PresumedSourceRange
         return is_other_begin_further and is_other_end_closer;
     }
 
+    bool is_line_inside(unsigned line_number)
+    {
+        return begin.getLine() >= line_number and line_number <= end.getLine();
+    }
+
   private:
     clang::PresumedLoc begin;
     clang::PresumedLoc end;
