@@ -27,3 +27,11 @@ void Tsepepe::DirectoryTree::create_file(std::filesystem::path relative_path_fro
     std::ofstream{path} << file_content;
 }
 
+std::string Tsepepe::DirectoryTree::load_file(std::filesystem::path relative_path_from_root)
+{
+    auto path{root / relative_path_from_root};
+    std::ifstream ifs{path};
+    std::stringstream buffer;
+    buffer << ifs.rdbuf();
+    return buffer.str();
+}
