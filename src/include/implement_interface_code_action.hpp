@@ -14,10 +14,13 @@
 #include <clang/Frontend/ASTUnit.h>
 #include <clang/Tooling/CompilationDatabase.h>
 
+#include "common_types.hpp"
+
 namespace Tsepepe
 {
 
 using FileContent = fluent::NamedType<std::string, struct FileContentTag>;
+using NewFileContent = std::string;
 using FileContentConstRef = fluent::NamedType<const std::string&, struct FileContentConstRefTag>;
 using InterfaceName = fluent::NamedType<std::string, struct InterfaceNameTag>;
 using CursorPositionLine = fluent::NamedType<unsigned, struct CursorPositionLineTag>;
@@ -27,7 +30,7 @@ class ImplementIntefaceCodeActionLibclangBased
   public:
     explicit ImplementIntefaceCodeActionLibclangBased(std::shared_ptr<clang::tooling::CompilationDatabase>);
 
-    FileContent apply(std::filesystem::path project_root, FileContentConstRef, InterfaceName, CursorPositionLine);
+    NewFileContent apply(RootDirectory, FileContentConstRef, InterfaceName, CursorPositionLine);
 
   private:
     void build_and_append_ast_unit(const std::filesystem::path&);

@@ -5,10 +5,10 @@
 #ifndef CODEBASE_GREPPER_HPP
 #define CODEBASE_GREPPER_HPP
 
-#include "NamedType/named_type_impl.hpp"
 #include <filesystem>
+#include <vector>
 
-#include <NamedType/named_type.hpp>
+#include "common_types.hpp"
 
 namespace Tsepepe
 {
@@ -21,9 +21,6 @@ struct GrepMatch
 
     auto operator<=>(const GrepMatch&) const = default;
 };
-
-using EcmaScriptPattern = fluent::NamedType<std::string, struct PatternTag>;
-using RootDirectory = fluent::NamedType<std::filesystem::path, struct RootDirectoryTag>;
 
 std::vector<GrepMatch> codebase_grep(RootDirectory, EcmaScriptPattern);
 
