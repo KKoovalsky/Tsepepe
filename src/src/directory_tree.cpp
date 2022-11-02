@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 
 Tsepepe::DirectoryTree::DirectoryTree(std::filesystem::path root) : root(std::move(root))
 {
-    fs::create_directories(this->root);
+    fs::create_directory(this->root);
 }
 
 Tsepepe::DirectoryTree::~DirectoryTree()
