@@ -9,6 +9,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
+#include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/ASTMatchers/ASTMatchers.h>
+#include <clang/Tooling/Tooling.h>
+
+#include "directory_tree.hpp"
 #include "libclang_utils/suitable_place_in_class_finder.hpp"
 
 using namespace Tsepepe;
@@ -19,14 +24,19 @@ struct SuitablePlaceInClassFinderTestData
     std::string header_file_content;
     std::string class_name;
     SuitablePublicMethodPlaceInCppFile expected_result;
+
+    auto operator<=>(const SuitablePlaceInClassFinderTestData&) const = default;
+};
+
+std::ostream& operator<<(std::ostream& os, const SuitablePublicMethodPlaceInCppFile& place)
+{
+    return os << "Line: " << place.line << ", is public section needed: " << std::boolalpha
+              << place.is_public_section_needed;
 };
 
 TEST_CASE("Finds suitable place in classes to put a new public function declaration", "[SuitablePlaceInClassFinder]")
 {
-    std::vector<SuitablePlaceInClassFinderTestData> test_data;
-    test_data.reserve(20);
-
-    test_data.emplace_back(
+    static std::initializer_list<SuitablePlaceInClassFinderTestData> test_data{
         SuitablePlaceInClassFinderTestData{.description = "In a class with a single public section",
                                            .header_file_content = "class Yolo\n"
                                                                   "{\n"
@@ -35,20 +45,17 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "    void gimme();\n"
                                                                   "};\n",
                                            .class_name = "Yolo",
-                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 5}});
-
-    test_data.emplace_back(
-        SuitablePlaceInClassFinderTestData{.description = "In a class with private methods",
-                                           .header_file_content = "class Maka\n"
-                                                                  "{\n"
-                                                                  "private:\n"
-                                                                  "    void gimme();\n"
-                                                                  "    void sijek();\n"
-                                                                  "};\n",
-                                           .class_name = "Maka",
-                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2}});
-
-    test_data.emplace_back(
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 5}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In a class with private methods",
+            .header_file_content = "class Maka\n"
+                                   "{\n"
+                                   "private:\n"
+                                   "    void gimme();\n"
+                                   "    void sijek();\n"
+                                   "};\n",
+            .class_name = "Maka",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2, .is_public_section_needed = true}},
         SuitablePlaceInClassFinderTestData{.description = "In a class with public and private section, in that order",
                                            .header_file_content = "\n"
                                                                   "class Bumm\n"
@@ -58,9 +65,7 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "};\n"
                                                                   "\n",
                                            .class_name = "Bumm",
-                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}});
-
-    test_data.emplace_back(
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}},
         SuitablePlaceInClassFinderTestData{.description = "In a class with private and public section, in that order",
                                            .header_file_content = "\n"
                                                                   "\n"
@@ -71,32 +76,28 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "};\n"
                                                                   "\n",
                                            .class_name = "Bumm",
-                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 6}});
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 6}},
 
-    test_data.emplace_back(SuitablePlaceInClassFinderTestData{
-        .description = "In a class with public, private and one more public section, in that order",
-        .header_file_content = "\n"
-                               "class Masta\n"
-                               "{\n"
-                               "public:\n"
-                               "\n"
-                               "private:\n"
-                               "\n"
-                               "public:\n"
-                               "};\n"
-                               "\n",
-        .class_name = "Masta",
-        .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}});
-
-    test_data.emplace_back(
+        SuitablePlaceInClassFinderTestData{
+            .description = "In a class with public, private and one more public section, in that order",
+            .header_file_content = "\n"
+                                   "class Masta\n"
+                                   "{\n"
+                                   "public:\n"
+                                   "\n"
+                                   "private:\n"
+                                   "\n"
+                                   "public:\n"
+                                   "};\n"
+                                   "\n",
+            .class_name = "Masta",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}},
         SuitablePlaceInClassFinderTestData{.description = "In an empty struct",
                                            .header_file_content = "struct Yolo\n"
                                                                   "{\n"
                                                                   "};\n",
                                            .class_name = "Yolo",
-                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2}});
-
-    test_data.emplace_back(
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2}},
         SuitablePlaceInClassFinderTestData{.description = "In a struct with properties only",
                                            .header_file_content = "#include <string>\n"
                                                                   "\n"
@@ -106,9 +107,7 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "    unsigned n;\n"
                                                                   "};\n",
                                            .class_name = "Yolo",
-                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}});
-
-    test_data.emplace_back(
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}},
         SuitablePlaceInClassFinderTestData{.description = "In a struct with few public methods",
                                            .header_file_content = "\n"
                                                                   "struct Yolo\n"
@@ -122,36 +121,56 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "    void gimme();\n"
                                                                   "};\n",
                                            .class_name = "Yolo",
-                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 10}});
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 10}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In an empty class",
+            .header_file_content = "\n"
+                                   "class Yolo\n"
+                                   "{\n"
+                                   "};\n",
+            .class_name = "Yolo",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 3, .is_public_section_needed = true}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In an empty class with the opening bracket on the same line as the class name",
+            .header_file_content = "\n"
+                                   "class Yolo {\n"
+                                   "\n"
+                                   "};\n",
+            .class_name = "Yolo",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2, .is_public_section_needed = true}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In a class with private section only",
+            .header_file_content = "\n"
+                                   "class Yolo \n"
+                                   "{\n"
+                                   "  private:\n"
+                                   "    unsigned i;\n"
+                                   "    float f;\n"
+                                   "\n"
+                                   "};\n",
+            .class_name = "Yolo",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 3, .is_public_section_needed = true}}};
 
-    test_data.emplace_back(SuitablePlaceInClassFinderTestData{
-        .description = "In an empty class",
-        .header_file_content = "\n"
-                               "class Yolo\n"
-                               "{\n"
-                               "};\n",
-        .class_name = "Yolo",
-        .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 3, .is_public_section_needed = true}});
+    auto [description, header_file_content, class_name, expected_result] = GENERATE(values(test_data));
+    INFO(description);
 
-    test_data.emplace_back(SuitablePlaceInClassFinderTestData{
-        .description = "In an empty class with the opening bracket on the same line as the class name",
-        .header_file_content = "\n"
-                               "class Yolo {\n"
-                               "\n"
-                               "};\n",
-        .class_name = "Yolo",
-        .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2, .is_public_section_needed = true}});
+    DirectoryTree dir_tree{"temp"};
+    auto path{dir_tree.create_file("header.hpp", header_file_content)};
 
-    test_data.emplace_back(SuitablePlaceInClassFinderTestData{
-        .description = "In a class with private section only",
-        .header_file_content = "\n"
-                               "class Yolo \n"
-                               "{\n"
-                               "  private:\n"
-                               "    unsigned i;\n"
-                               "    float f;\n"
-                               "\n"
-                               "};\n",
-        .class_name = "Yolo",
-        .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 3, .is_public_section_needed = true}});
+    using namespace clang;
+    auto class_matcher{ast_matchers::cxxRecordDecl(ast_matchers::hasName(class_name)).bind("class")};
+    auto ast_unit{tooling::buildASTFromCode(header_file_content, "header.hpp")};
+    auto match_result{clang::ast_matchers::match(class_matcher, ast_unit->getASTContext())};
+
+    REQUIRE(match_result.size() > 0);
+
+    const auto& first_match{match_result[0]};
+    auto node{first_match.getNodeAs<CXXRecordDecl>("class")};
+
+    REQUIRE(node != nullptr);
+
+    auto result{find_suitable_place_in_class_for_public_method(
+        path, node, ast_unit->getSourceManager(), ast_unit->getLangOpts())};
+
+    REQUIRE(result == expected_result);
 }

@@ -18,6 +18,8 @@ struct SuitablePublicMethodPlaceInCppFile
 {
     unsigned line;
     bool is_public_section_needed{false};
+
+    auto operator<=>(const SuitablePublicMethodPlaceInCppFile&) const = default;
 };
 
 SuitablePublicMethodPlaceInCppFile find_suitable_place_in_class_for_public_method(std::filesystem::path cpp_file,
