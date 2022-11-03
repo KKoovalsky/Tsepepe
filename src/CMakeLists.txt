@@ -18,6 +18,7 @@ add_library(tsepepe_lib STATIC
     src/codebase_grepper.cpp
     src/directory_tree.cpp
     src/libclang_utils/suitable_place_in_class_finder.cpp
+    src/libclang_utils/pure_virtual_functions_extractor.cpp
 )
 target_include_directories(tsepepe_lib PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 target_link_libraries(tsepepe_lib PUBLIC NamedType)
