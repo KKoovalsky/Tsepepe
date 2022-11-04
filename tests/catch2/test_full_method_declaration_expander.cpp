@@ -87,7 +87,24 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
                                                             "    ~Class();\n"
                                                             "};\n",
                                      .line_with_declaration = 4,
-                                     .expected_result = "Class::~Class()\n"}};
+                                     .expected_result = "Class::~Class()\n"},
+            SingleHeaderFileTestData{.description = "From method returning templated type",
+                                     .header_file_content = "#include <variant>\n"
+                                                            "namespace Context\n"
+                                                            "{\n"
+                                                            "    struct One {};\n"
+                                                            "    struct Two {};\n"
+                                                            "    struct Three {};\n"
+                                                            "\n"
+                                                            "    struct Class\n"
+                                                            "    {\n"
+                                                            "        struct Four {};\n"
+                                                            "        std::variant<One, Two, Three, Four> gimme();\n"
+                                                            "    };\n"
+                                                            "};\n",
+                                     .line_with_declaration = 11,
+                                     .expected_result = "std::variant<Context::One, Context::Two, Context::Three, "
+                                                        "Context::Class::Four> Context::Class::gimme()"}};
 
         auto [description, header_file_content, line_with_declaration, expected_result] = GENERATE(values(test_data));
 

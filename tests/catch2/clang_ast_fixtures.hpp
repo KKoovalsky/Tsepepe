@@ -18,7 +18,8 @@ namespace Tsepepe
 struct ClangSingleAstFixture
 {
     explicit ClangSingleAstFixture(const std::string& header_file_content) :
-        header_file_content{header_file_content}, ast_unit{clang::tooling::buildASTFromCode(header_file_content)}
+        header_file_content{header_file_content},
+        ast_unit{clang::tooling::buildASTFromCodeWithArgs(header_file_content, {"-std=gnu++20"})}
     {
     }
 
