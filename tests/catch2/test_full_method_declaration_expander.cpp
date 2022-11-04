@@ -29,7 +29,6 @@ AST_MATCHER_P(clang::CXXMethodDecl, isDeclaredAtLine, unsigned, line)
 {
     const auto& source_manager{Finder->getASTContext().getSourceManager()};
     auto actual_line_with_declaration{source_manager.getPresumedLoc(Node.getBeginLoc()).getLine()};
-    Node.dump();
     return line == actual_line_with_declaration;
 };
 
@@ -81,6 +80,7 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
         using namespace clang;
         auto matcher{
             ast_matchers::cxxMethodDecl(isDeclaredAtLine(line_with_declaration)).bind("method_at_line_matcher")};
+
         ClangSingleAstFixture ast_fixture{header_file_content};
         auto method{ast_fixture.get_first_match<CXXMethodDecl>(matcher)};
 

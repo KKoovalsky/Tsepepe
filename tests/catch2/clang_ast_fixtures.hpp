@@ -11,8 +11,6 @@
 #include <clang/ASTMatchers/ASTMatchers.h>
 #include <clang/Tooling/Tooling.h>
 
-#include <iostream>
-
 namespace Tsepepe
 {
 
@@ -33,12 +31,17 @@ struct ClangSingleAstFixture
             throw std::runtime_error{"Matcher: " + matcher_id + ", failed to find a match within the file content:\n"
                                      + header_file_content};
 
-        std::cout << matches.size() << std::endl;
         const auto& first_match{matches[0]};
+        // Normally this works, but in this case, getNodeAs returns nullptr, for the CXXMethodDecl, thus inside
+        // there is a workaround, with getMap() ...
         auto node{first_match.template getNodeAs<NodeType>(matcher_id)};
         if (node == nullptr)
-            throw std::runtime_error{"Failed to get node for matcher: " + matcher_id + ", within the file content:\n"
-                                     + header_file_content};
+        {
+            node = first_match.getMap().begin()->second.template get<NodeType>();
+            if (node == nullptr)
+                throw std::runtime_error{"Failed to get node for matcher: " + matcher_id
+                                         + ", within the file content:\n" + header_file_content};
+        }
         return node;
     }
 
