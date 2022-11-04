@@ -5,6 +5,7 @@ add_executable(tsepepe_lib_unit_test
     test_implement_interface_code_action.cpp
     test_suitable_place_in_class_finder.cpp
     test_pure_virtual_functions_extractor.cpp
+    test_full_method_declaration_expander.cpp
 )
 
 target_link_libraries(tsepepe_lib_unit_test Catch2::Catch2WithMain tsepepe_lib)
