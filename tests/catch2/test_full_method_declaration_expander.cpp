@@ -40,6 +40,63 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
     SECTION("For a single header file")
     {
         static std::initializer_list<SingleHeaderFileTestData> test_data{
+            SingleHeaderFileTestData{.description = "From declaration returning a bool",
+                                     .header_file_content = "struct Boo\n"
+                                                            "{\n"
+                                                            "    bool baz();\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "bool Boo::baz()"},
+
+            SingleHeaderFileTestData{.description = "From declaration inside a namespace",
+                                     .header_file_content = "namespace Namespace\n"
+                                                            "{\n"
+                                                            "struct Yolo\n"
+                                                            "{\n"
+                                                            "    void foo();\n"
+                                                            "};\n"
+                                                            "}\n",
+                                     .line_with_declaration = 5,
+                                     .expected_result = "void Namespace::Yolo::foo()"},
+            SingleHeaderFileTestData{.description = "From declaration returning a type from a nested namespace",
+                                     .header_file_content = "namespace Namespace\n"
+                                                            "{\n"
+                                                            "\n"
+                                                            "struct Nested\n"
+                                                            "{\n"
+                                                            "};\n"
+                                                            "\n"
+                                                            "struct Class\n"
+                                                            "{\n"
+                                                            "    Nested foo();\n"
+                                                            "};\n"
+                                                            "\n"
+                                                            "}\n",
+                                     .line_with_declaration = 10,
+                                     .expected_result = "Namespace::Nested Namespace::Class::foo()"},
+            SingleHeaderFileTestData{.description = "From declaration with a single named parameter",
+                                     .header_file_content = "struct Yolo\n"
+                                                            "{\n"
+                                                            "    void gimme(unsigned int number);\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "void Yolo::gimme(unsigned int number)"},
+            SingleHeaderFileTestData{
+                .description = "From declaration with multiple parameters, some are named, some not",
+                .header_file_content = "struct Yolo\n"
+                                       "{\n"
+                                       "    struct Nested1\n"
+                                       "    {\n"
+                                       "    };\n"
+                                       "\n"
+                                       "    struct Nested2\n"
+                                       "    {\n"
+                                       "    };\n"
+                                       "\n"
+                                       "    void gimme(Nested1, unsigned int number, const Nested2&);\n"
+                                       "};\n",
+                .line_with_declaration = 11,
+                .expected_result = "void Yolo::gimme(Yolo::Nested1, unsigned int number, const Yolo::Nested2 &)"},
             SingleHeaderFileTestData{.description = "From basic method declaration",
                                      .header_file_content = "class SomeClass\n"
                                                             "{\n"

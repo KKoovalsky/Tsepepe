@@ -20,7 +20,7 @@ using namespace clang;
 // --------------------------------------------------------------------------------------------------------------------
 static std::string get_return_type(const CXXMethodDecl*, const SourceManager&, const PrintingPolicy&);
 static std::string stringify_template_specialization(const TemplateSpecializationType*, const PrintingPolicy&);
-static std::string get_parameters(const CXXMethodDecl*, const SourceManager&);
+static std::string get_parameters(const CXXMethodDecl*, const SourceManager&, const PrintingPolicy&);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
@@ -49,7 +49,7 @@ std::string Tsepepe::fully_expand_method_declaration(const CXXMethodDecl* method
     }
 
     result.append(method->getQualifiedNameAsString());
-    result.append(get_parameters(method, source_manager));
+    result.append(get_parameters(method, source_manager, printing_policy));
 
     return result;
 }
@@ -105,20 +105,31 @@ static std::string stringify_template_specialization(const TemplateSpecializatio
     return result;
 }
 
-static std::string get_parameters(const CXXMethodDecl* node, const SourceManager& source_manager)
+static std::string
+get_parameters(const CXXMethodDecl* node, const SourceManager& source_manager, const PrintingPolicy& printing_policy)
 {
     std::string result;
     result.reserve(20);
 
     result += '(';
 
-    // if (auto param_source_range{node->getParametersSourceRange()}; param_source_range.isValid())
-    // {
-    //     auto parameters_as_is{source_range_content_to_string(param_source_range, source_manager)};
-    //     std::regex default_param_regex{"\\s*=\\s*.*?(,|$)"};
-    //     output_stream << std::regex_replace(parameters_as_is, default_param_regex, "$1");
-    // }
-    //
+    const auto& params{node->parameters()};
+    for (const auto& param : params)
+    {
+        result += param->getType().getAsString(printing_policy);
+        auto name{param->getQualifiedNameAsString()};
+        if (not name.empty())
+        {
+            result += ' ';
+            result += std::move(name);
+        }
+        result += ", ";
+    }
+
+    if (params.size() > 0)
+        // Replace the trailing ", " .
+        result.erase(result.size() - 2);
+
     result += ')';
 
     return result;
