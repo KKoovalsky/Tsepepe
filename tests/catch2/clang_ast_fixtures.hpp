@@ -9,6 +9,7 @@
 
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
+#include <clang/Basic/SourceManager.h>
 #include <clang/Tooling/Tooling.h>
 
 namespace Tsepepe
@@ -43,6 +44,11 @@ struct ClangSingleAstFixture
                                          + ", within the file content:\n" + header_file_content};
         }
         return node;
+    }
+
+    const clang::SourceManager& get_source_manager() const
+    {
+        return ast_unit->getSourceManager();
     }
 
   private:

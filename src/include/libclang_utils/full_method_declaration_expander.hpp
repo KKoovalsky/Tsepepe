@@ -6,11 +6,12 @@
 #define FULL_METHOD_DECLARATION_EXPANDER_HPP
 
 #include <clang/AST/DeclCXX.h>
+#include <clang/Basic/SourceManager.h>
 
 namespace Tsepepe
 {
 
-std::string fully_expand_method_declaration(const clang::CXXMethodDecl*);
+std::string fully_expand_method_declaration(const clang::CXXMethodDecl*, const clang::SourceManager&);
 
 }
 

@@ -4,21 +4,25 @@
  */
 #include "libclang_utils/full_method_declaration_expander.hpp"
 #include "clang/AST/DeclCXX.h"
+#include "clang/Basic/SourceLocation.h"
 
 #include <clang/AST/PrettyPrinter.h>
 #include <clang/Basic/LangOptions.h>
+#include <clang/Lex/Lexer.h>
+
+#include "libclang_utils/misc_utils.hpp"
 
 using namespace clang;
 
 // --------------------------------------------------------------------------------------------------------------------
 // Private declarations
 // --------------------------------------------------------------------------------------------------------------------
-static std::string get_return_type(const clang::CXXMethodDecl*, const PrintingPolicy&);
+static std::string get_return_type(const CXXMethodDecl*, const SourceManager&, const PrintingPolicy&);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-std::string Tsepepe::fully_expand_method_declaration(const clang::CXXMethodDecl* method)
+std::string Tsepepe::fully_expand_method_declaration(const CXXMethodDecl* method, const SourceManager& source_manager)
 {
     std::string result;
     result.reserve(120);
@@ -30,18 +34,26 @@ std::string Tsepepe::fully_expand_method_declaration(const clang::CXXMethodDecl*
     printing_policy.Indentation = 4;
     printing_policy.CleanUglifiedParameters = true;
 
-    method->getDeclaredReturnType();
-    auto return_type{method->getReturnType()};
-    result.append(method->getReturnType().getAsString(printing_policy));
-    result.append(method->getQualifiedNameAsString());
+    result.append(get_return_type(method, source_manager, printing_policy));
 
-    return {};
+    return result;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
 // Private definitions
 // --------------------------------------------------------------------------------------------------------------------
-static std::string get_return_type(const clang::CXXMethodDecl*, const PrintingPolicy&)
+#include <iostream>
+static std::string
+get_return_type(const CXXMethodDecl* node, const SourceManager& source_manager, const PrintingPolicy& printing_policy)
 {
-    return {};
+    auto has_explicit_return_type{[&](const CXXMethodDecl* node) {
+        auto return_type_as_written_in_code{Tsepepe::source_range_content_to_string(
+            node->getReturnTypeSourceRange(), source_manager, node->getLangOpts())};
+        std::cout << return_type_as_written_in_code << std::endl;
+        return not return_type_as_written_in_code.empty();
+    }};
+
+    if (not has_explicit_return_type(node))
+        return "";
+    return node->getReturnType().getAsString(printing_policy);
 }

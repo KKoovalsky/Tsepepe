@@ -71,7 +71,23 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
                                                             "};\n",
                                      .line_with_declaration = 7,
                                      .expected_result =
-                                         "Class::Nested::EvenMoreNested Class::Nested::EvenMoreNested::create()\n"}};
+                                         "Class::Nested::EvenMoreNested Class::Nested::EvenMoreNested::create()\n"},
+            SingleHeaderFileTestData{.description = "From constructor declaration",
+                                     .header_file_content = "struct Class\n"
+                                                            "{\n"
+                                                            "    explicit Class();\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "Class::Class()\n"},
+
+            SingleHeaderFileTestData{.description = "From destructor declaration",
+                                     .header_file_content = "struct Class\n"
+                                                            "{\n"
+                                                            "    Class();\n"
+                                                            "    ~Class();\n"
+                                                            "};\n",
+                                     .line_with_declaration = 4,
+                                     .expected_result = "Class::~Class()\n"}};
 
         auto [description, header_file_content, line_with_declaration, expected_result] = GENERATE(values(test_data));
 
@@ -84,6 +100,6 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
         ClangSingleAstFixture ast_fixture{header_file_content};
         auto method{ast_fixture.get_first_match<CXXMethodDecl>(matcher)};
 
-        REQUIRE(fully_expand_method_declaration(method) == expected_result);
+        CHECK(fully_expand_method_declaration(method, ast_fixture.get_source_manager()) == expected_result);
     }
 }
