@@ -21,13 +21,10 @@ Tsepepe::pure_virtual_functions_to_override_declarations(const clang::CXXRecordD
     OverrideDeclarations override_declarations;
 
     auto append_override_declaration{[&](const CXXMethodDecl* method) {
-        // auto declaration{Tsepepe::utils::clang_ast::source_range_content_to_string(
-        //     method->getSourceRange(), source_manager, lang_options)};
-        //
-        // std::regex overrider{"virtual\\s+(.*)(\\s+=\\s+0)"};
-        // auto override_declaration{std::regex_replace(declaration, overrider, "$1 override;")};
-        //
-        // function_override_declarations.emplace_back(std::move(override_declaration));
+        // TODO
+        // 1. Get the full method declaration.
+        // 2. Shortify nesting from the base class.
+        // 3. Shortify nesting from the namespace(s), the derived class is in.
     }};
 
     auto collect_override_declarations{[&](const clang::CXXRecordDecl* record) {
