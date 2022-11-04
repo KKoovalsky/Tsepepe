@@ -11,6 +11,10 @@
 #include <clang/Basic/SourceLocation.h>
 #include <clang/Lex/Lexer.h>
 
+#include <algorithm>
+#include <iterator>
+#include <numeric>
+
 #include "libclang_utils/misc_utils.hpp"
 
 using namespace clang;
@@ -21,6 +25,7 @@ using namespace clang;
 static std::string get_return_type(const CXXMethodDecl*, const SourceManager&, const PrintingPolicy&);
 static std::string stringify_template_specialization(const TemplateSpecializationType*, const PrintingPolicy&);
 static std::string get_parameters(const CXXMethodDecl*, const SourceManager&, const PrintingPolicy&);
+static std::string join(const std::vector<std::string>& string_vec);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
@@ -80,6 +85,14 @@ get_return_type(const CXXMethodDecl* node, const SourceManager& source_manager, 
 static std::string stringify_template_specialization(const TemplateSpecializationType* template_spec_type,
                                                      const PrintingPolicy& printing_policy)
 {
+
+    auto template_arg_to_string{[&](const TemplateArgument& template_arg) {
+        std::string s;
+        llvm::raw_string_ostream os{s};
+        template_arg.print(printing_policy, os, true);
+        return s;
+    }};
+
     std::string result;
     result.reserve(100);
 
@@ -88,19 +101,12 @@ static std::string stringify_template_specialization(const TemplateSpecializatio
     auto template_name{template_spec_type->getTemplateName()};
     template_name.print(os, printing_policy, TemplateName::Qualified::Fully);
 
-    os << '<';
     const auto& template_args{template_spec_type->template_arguments()};
-    for (const auto& template_arg : template_args)
-    {
-        template_arg.print(printing_policy, os, true);
-        os << ", ";
-    }
+    std::vector<std::string> template_args_as_string;
+    template_args_as_string.reserve(template_args.size());
+    std::ranges::transform(template_args, std::back_inserter(template_args_as_string), template_arg_to_string);
 
-    if (template_args.size() > 0)
-        // Replace the trailing ", " .
-        result.erase(result.size() - 2);
-
-    os << '>';
+    os << '<' << join(template_args_as_string) << '>';
 
     return result;
 }
@@ -108,29 +114,37 @@ static std::string stringify_template_specialization(const TemplateSpecializatio
 static std::string
 get_parameters(const CXXMethodDecl* node, const SourceManager& source_manager, const PrintingPolicy& printing_policy)
 {
-    std::string result;
-    result.reserve(20);
-
-    result += '(';
-
-    const auto& params{node->parameters()};
-    for (const auto& param : params)
-    {
-        result += param->getType().getAsString(printing_policy);
+    auto param_to_string{[&](const ParmVarDecl* param) {
+        auto result{param->getType().getAsString(printing_policy)};
         auto name{param->getQualifiedNameAsString()};
         if (not name.empty())
         {
             result += ' ';
             result += std::move(name);
         }
-        result += ", ";
-    }
+        return result;
+    }};
 
-    if (params.size() > 0)
-        // Replace the trailing ", " .
-        result.erase(result.size() - 2);
+    const auto& params{node->parameters()};
+    std::vector<std::string> params_as_string;
+    params_as_string.reserve(params.size());
+    std::ranges::transform(params, std::back_inserter(params_as_string), param_to_string);
 
-    result += ')';
+    return '(' + join(params_as_string) + ')';
+}
 
-    return result;
+static std::string join(const std::vector<std::string>& string_vec)
+{
+    static constexpr const char delim[]{", "};
+
+    if (string_vec.size() == 0)
+        return "";
+
+    std::string init{string_vec[0]};
+    init.reserve(120);
+    return std::accumulate(
+        std::next(std::begin(string_vec)),
+        std::end(string_vec),
+        std::move(init),
+        [](std::string result, const std::string& elem) { return std::move(result) + delim + elem; });
 }
