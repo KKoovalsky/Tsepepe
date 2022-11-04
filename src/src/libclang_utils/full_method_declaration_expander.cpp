@@ -20,6 +20,7 @@ using namespace clang;
 // --------------------------------------------------------------------------------------------------------------------
 static std::string get_return_type(const CXXMethodDecl*, const SourceManager&, const PrintingPolicy&);
 static std::string stringify_template_specialization(const TemplateSpecializationType*, const PrintingPolicy&);
+static std::string get_parameters(const CXXMethodDecl*, const SourceManager&);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
@@ -40,7 +41,15 @@ std::string Tsepepe::fully_expand_method_declaration(const CXXMethodDecl* method
     printing_policy.PolishForDeclaration = true;
     printing_policy.PrintInjectedClassNameWithArguments = true;
 
-    result.append(get_return_type(method, source_manager, printing_policy));
+    auto return_type_as_string{get_return_type(method, source_manager, printing_policy)};
+    if (not return_type_as_string.empty())
+    {
+        result.append(std::move(return_type_as_string));
+        result += ' ';
+    }
+
+    result.append(method->getQualifiedNameAsString());
+    result.append(get_parameters(method, source_manager));
 
     return result;
 }
@@ -92,6 +101,25 @@ static std::string stringify_template_specialization(const TemplateSpecializatio
         result.erase(result.size() - 2);
 
     os << '>';
+
+    return result;
+}
+
+static std::string get_parameters(const CXXMethodDecl* node, const SourceManager& source_manager)
+{
+    std::string result;
+    result.reserve(20);
+
+    result += '(';
+
+    // if (auto param_source_range{node->getParametersSourceRange()}; param_source_range.isValid())
+    // {
+    //     auto parameters_as_is{source_range_content_to_string(param_source_range, source_manager)};
+    //     std::regex default_param_regex{"\\s*=\\s*.*?(,|$)"};
+    //     output_stream << std::regex_replace(parameters_as_is, default_param_regex, "$1");
+    // }
+    //
+    result += ')';
 
     return result;
 }

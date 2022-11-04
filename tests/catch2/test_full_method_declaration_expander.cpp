@@ -46,7 +46,7 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
                                                             "    unsigned int foo();\n"
                                                             "};\n",
                                      .line_with_declaration = 3,
-                                     .expected_result = "unsigned int SomeClass::foo()\n"},
+                                     .expected_result = "unsigned int SomeClass::foo()"},
             SingleHeaderFileTestData{.description = "From declaration returning a nested type",
                                      .header_file_content = "class Foo\n"
                                                             "{\n"
@@ -57,7 +57,7 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
                                                             "    Bar yolo();\n"
                                                             "};\n",
                                      .line_with_declaration = 7,
-                                     .expected_result = "Foo::Bar Foo::yolo()\n"},
+                                     .expected_result = "Foo::Bar Foo::yolo()"},
             SingleHeaderFileTestData{.description = "From method returning multi-nested type",
                                      .header_file_content = "class Class\n"
                                                             "{\n"
@@ -71,14 +71,14 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
                                                             "};\n",
                                      .line_with_declaration = 7,
                                      .expected_result =
-                                         "Class::Nested::EvenMoreNested Class::Nested::EvenMoreNested::create()\n"},
+                                         "Class::Nested::EvenMoreNested Class::Nested::EvenMoreNested::create()"},
             SingleHeaderFileTestData{.description = "From constructor declaration",
                                      .header_file_content = "struct Class\n"
                                                             "{\n"
                                                             "    explicit Class();\n"
                                                             "};\n",
                                      .line_with_declaration = 3,
-                                     .expected_result = "Class::Class()\n"},
+                                     .expected_result = "Class::Class()"},
 
             SingleHeaderFileTestData{.description = "From destructor declaration",
                                      .header_file_content = "struct Class\n"
@@ -87,7 +87,7 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
                                                             "    ~Class();\n"
                                                             "};\n",
                                      .line_with_declaration = 4,
-                                     .expected_result = "Class::~Class()\n"},
+                                     .expected_result = "Class::~Class()"},
             SingleHeaderFileTestData{.description = "From method returning templated type",
                                      .header_file_content = "#include <variant>\n"
                                                             "namespace Context\n"
