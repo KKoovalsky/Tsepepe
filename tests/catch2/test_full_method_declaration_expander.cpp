@@ -1,5 +1,5 @@
 /**
- * @file        test_full_method_declaration_expander.cpp
+ * @file        test_full_function_declaration_expander.cpp
  * @brief       Tests the full expander of the method declaration.
  */
 #include <catch2/catch_test_macros.hpp>
@@ -8,13 +8,14 @@
 #include <initializer_list>
 #include <string>
 
-#include "libclang_utils/full_method_declaration_expander.hpp"
+#include "libclang_utils/full_function_declaration_expander.hpp"
 
 #include "clang_ast_fixtures.hpp"
+#include "clang/AST/Decl.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/ASTMatchers/ASTMatchersMacros.h"
 
-namespace FullMethodDeclarationExpanderTest
+namespace FullFunctionDeclarationExpanderTest
 {
 struct SingleHeaderFileTestData
 {
@@ -23,21 +24,21 @@ struct SingleHeaderFileTestData
     unsigned line_with_declaration;
     std::string expected_result;
 };
-}; // namespace FullMethodDeclarationExpanderTest
+}; // namespace FullFunctionDeclarationExpanderTest
 
-AST_MATCHER_P(clang::CXXMethodDecl, isDeclaredAtLine, unsigned, line)
+AST_MATCHER_P(clang::FunctionDecl, isDeclaredAtLine, unsigned, line)
 {
     const auto& source_manager{Finder->getASTContext().getSourceManager()};
     auto actual_line_with_declaration{source_manager.getPresumedLoc(Node.getBeginLoc()).getLine()};
     return line == actual_line_with_declaration;
 };
 
-TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpander]")
+TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationExpander]")
 {
     using namespace Tsepepe;
-    using namespace FullMethodDeclarationExpanderTest;
+    using namespace FullFunctionDeclarationExpanderTest;
 
-    SECTION("For a single header file")
+    SECTION("For a method within a single header file")
     {
         static std::initializer_list<SingleHeaderFileTestData> test_data{
             SingleHeaderFileTestData{.description = "From declaration returning a bool",
@@ -47,7 +48,6 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
                                                             "};\n",
                                      .line_with_declaration = 3,
                                      .expected_result = "bool Boo::baz()"},
-
             SingleHeaderFileTestData{.description = "From declaration inside a namespace",
                                      .header_file_content = "namespace Namespace\n"
                                                             "{\n"
@@ -161,7 +161,20 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
                                                             "};\n",
                                      .line_with_declaration = 11,
                                      .expected_result = "std::variant<Context::One, Context::Two, Context::Three, "
-                                                        "Context::Class::Four> Context::Class::gimme()"}};
+                                                        "Context::Class::Four> Context::Class::gimme()"},
+            SingleHeaderFileTestData{.description = "From a plain function declaration",
+                                     .header_file_content = "#include <vector>\n"
+                                                            "#include <string>\n"
+                                                            "unsigned long long foo(std::vector<std::string> names);\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "unsigned long long foo(std::vector<std::string> names)"},
+            SingleHeaderFileTestData{.description = "From plain declaration inside a namespace",
+                                     .header_file_content = "namespace Namespace\n"
+                                                            "{\n"
+                                                            "void foo();\n"
+                                                            "}\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "void Namespace::foo()"}};
 
         auto [description, header_file_content, line_with_declaration, expected_result] = GENERATE(values(test_data));
 
@@ -169,11 +182,11 @@ TEST_CASE("Method declarations are expanded fully", "[FullMethodDeclarationExpan
 
         using namespace clang;
         auto matcher{
-            ast_matchers::cxxMethodDecl(isDeclaredAtLine(line_with_declaration)).bind("method_at_line_matcher")};
+            ast_matchers::functionDecl(isDeclaredAtLine(line_with_declaration)).bind("function_at_line_matcher")};
 
         ClangSingleAstFixture ast_fixture{header_file_content};
-        auto method{ast_fixture.get_first_match<CXXMethodDecl>(matcher)};
+        auto function{ast_fixture.get_first_match<FunctionDecl>(matcher)};
 
-        CHECK(fully_expand_method_declaration(method, ast_fixture.get_source_manager()) == expected_result);
+        CHECK(fully_expand_function_declaration(function, ast_fixture.get_source_manager()) == expected_result);
     }
 }

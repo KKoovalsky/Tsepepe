@@ -1,8 +1,8 @@
 /**
- * @file	full_method_declaration_expander.cpp
- * @brief	Implements the full expanding of the the method declaration.
+ * @file	full_function_declaration_expander.cpp
+ * @brief	Implements the full expanding of the the function declaration.
  */
-#include "libclang_utils/full_method_declaration_expander.hpp"
+#include "libclang_utils/full_function_declaration_expander.hpp"
 
 #include <clang/AST/DeclCXX.h>
 #include <clang/AST/PrettyPrinter.h>
@@ -22,15 +22,15 @@ using namespace clang;
 // --------------------------------------------------------------------------------------------------------------------
 // Private declarations
 // --------------------------------------------------------------------------------------------------------------------
-static std::string get_return_type(const CXXMethodDecl*, const SourceManager&, const PrintingPolicy&);
+static std::string get_return_type(const FunctionDecl*, const SourceManager&, const PrintingPolicy&);
 static std::string stringify_template_specialization(const TemplateSpecializationType*, const PrintingPolicy&);
-static std::string get_parameters(const CXXMethodDecl*, const SourceManager&, const PrintingPolicy&);
+static std::string get_parameters(const FunctionDecl*, const SourceManager&, const PrintingPolicy&);
 static std::string join(const std::vector<std::string>& string_vec);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-std::string Tsepepe::fully_expand_method_declaration(const CXXMethodDecl* method, const SourceManager& source_manager)
+std::string Tsepepe::fully_expand_function_declaration(const FunctionDecl* function, const SourceManager& source_manager)
 {
     std::string result;
     result.reserve(120);
@@ -46,15 +46,15 @@ std::string Tsepepe::fully_expand_method_declaration(const CXXMethodDecl* method
     printing_policy.PolishForDeclaration = true;
     printing_policy.PrintInjectedClassNameWithArguments = true;
 
-    auto return_type_as_string{get_return_type(method, source_manager, printing_policy)};
+    auto return_type_as_string{get_return_type(function, source_manager, printing_policy)};
     if (not return_type_as_string.empty())
     {
         result.append(std::move(return_type_as_string));
         result += ' ';
     }
 
-    result.append(method->getQualifiedNameAsString());
-    result.append(get_parameters(method, source_manager, printing_policy));
+    result.append(function->getQualifiedNameAsString());
+    result.append(get_parameters(function, source_manager, printing_policy));
 
     return result;
 }
@@ -63,9 +63,9 @@ std::string Tsepepe::fully_expand_method_declaration(const CXXMethodDecl* method
 // Private definitions
 // --------------------------------------------------------------------------------------------------------------------
 static std::string
-get_return_type(const CXXMethodDecl* node, const SourceManager& source_manager, const PrintingPolicy& printing_policy)
+get_return_type(const FunctionDecl* node, const SourceManager& source_manager, const PrintingPolicy& printing_policy)
 {
-    auto has_explicit_return_type{[&](const CXXMethodDecl* node) {
+    auto has_explicit_return_type{[&](const FunctionDecl* node) {
         auto return_type_as_written_in_code{Tsepepe::source_range_content_to_string(
             node->getReturnTypeSourceRange(), source_manager, node->getLangOpts())};
         return not return_type_as_written_in_code.empty();
@@ -112,7 +112,7 @@ static std::string stringify_template_specialization(const TemplateSpecializatio
 }
 
 static std::string
-get_parameters(const CXXMethodDecl* node, const SourceManager& source_manager, const PrintingPolicy& printing_policy)
+get_parameters(const FunctionDecl* node, const SourceManager& source_manager, const PrintingPolicy& printing_policy)
 {
     auto param_to_string{[&](const ParmVarDecl* param) {
         auto result{param->getType().getAsString(printing_policy)};
