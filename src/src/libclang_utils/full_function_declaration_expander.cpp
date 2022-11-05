@@ -30,7 +30,9 @@ static std::string join(const std::vector<std::string>& string_vec);
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-std::string Tsepepe::fully_expand_function_declaration(const FunctionDecl* function, const SourceManager& source_manager)
+std::string Tsepepe::fully_expand_function_declaration(const FunctionDecl* function,
+                                                       const SourceManager& source_manager,
+                                                       FullFunctionDeclarationExpanderOptions options)
 {
     std::string result;
     result.reserve(120);

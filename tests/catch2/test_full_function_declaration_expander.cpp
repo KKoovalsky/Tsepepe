@@ -25,11 +25,19 @@ AST_MATCHER_P(clang::FunctionDecl, isDeclaredAtLine, unsigned, line)
 
 namespace FullFunctionDeclarationExpanderTest
 {
+
 struct SingleHeaderFileTestData
 {
     std::string description;
     std::string header_file_content;
     unsigned line_with_declaration;
+    std::string expected_result;
+};
+
+struct TestWithOptionsTestData
+{
+    std::string description;
+    Tsepepe::FullFunctionDeclarationExpanderOptions options;
     std::string expected_result;
 };
 
@@ -212,6 +220,35 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
         SingleHeaderTestFixture fixture{header_file_content, line_with_declaration};
         CHECK(fully_expand_function_declaration(fixture.get_function_declaration(), fixture.get_source_manager())
               == expected_result);
+    }
+
+    SECTION("Handles virtual and override keyword")
+    {
+        std::string header_file_content{
+            "struct Base\n"
+            "{\n"
+            "    virtual void do_stuff() = 0;\n"
+            "};\n"
+            "class Derived : public Base\n"
+            "{\n"
+            "    virtual void do_stuff() override;\n"
+            "};\n"};
+        unsigned line_with_declaration{7};
+
+        auto [description, options, expected_result] =
+            GENERATE(values({TestWithOptionsTestData{.description = "No keyword is ignored by default",
+                                                     .options = {},
+                                                     .expected_result = "virtual void Derived::do_stuff() override"},
+                             TestWithOptionsTestData{.description = "Only virtual keyword is ignored",
+                                                     .options = {.method_opts = {.keep_virtual = 0}},
+                                                     .expected_result = "void Derived::do_stuff() override"}}));
+
+        INFO(description);
+
+        SingleHeaderTestFixture fixture{header_file_content, line_with_declaration};
+        CHECK(
+            fully_expand_function_declaration(fixture.get_function_declaration(), fixture.get_source_manager(), options)
+            == expected_result);
     }
 }
 /*
