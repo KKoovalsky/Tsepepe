@@ -24,7 +24,7 @@ struct ClangSingleAstFixture
     }
 
     template<typename NodeType, typename Matcher>
-    auto get_first_match(const Matcher& matcher)
+    auto get_first_match(const Matcher& matcher) const
     {
         std::string matcher_id{matcher.getID().first.asStringRef()};
 

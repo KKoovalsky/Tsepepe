@@ -14,6 +14,14 @@
 #include "clang/AST/Decl.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/ASTMatchers/ASTMatchersMacros.h"
+#include "clang/Basic/SourceManager.h"
+
+AST_MATCHER_P(clang::FunctionDecl, isDeclaredAtLine, unsigned, line)
+{
+    const auto& source_manager{Finder->getASTContext().getSourceManager()};
+    auto actual_line_with_declaration{source_manager.getPresumedLoc(Node.getBeginLoc()).getLine()};
+    return line == actual_line_with_declaration;
+};
 
 namespace FullFunctionDeclarationExpanderTest
 {
@@ -24,14 +32,34 @@ struct SingleHeaderFileTestData
     unsigned line_with_declaration;
     std::string expected_result;
 };
-}; // namespace FullFunctionDeclarationExpanderTest
 
-AST_MATCHER_P(clang::FunctionDecl, isDeclaredAtLine, unsigned, line)
+struct SingleHeaderTestFixture
 {
-    const auto& source_manager{Finder->getASTContext().getSourceManager()};
-    auto actual_line_with_declaration{source_manager.getPresumedLoc(Node.getBeginLoc()).getLine()};
-    return line == actual_line_with_declaration;
+    SingleHeaderTestFixture(const std::string& header_file_content, unsigned line_with_declaration) :
+        ast_fixture{header_file_content}, line_with_declaration{line_with_declaration}
+    {
+    }
+
+    const clang::FunctionDecl* get_function_declaration() const
+    {
+        using namespace clang;
+        auto matcher{
+            ast_matchers::functionDecl(isDeclaredAtLine(line_with_declaration)).bind("function_at_line_matcher")};
+
+        auto function{ast_fixture.get_first_match<FunctionDecl>(matcher)};
+        return function;
+    }
+
+    const clang::SourceManager& get_source_manager() const
+    {
+        return ast_fixture.get_source_manager();
+    }
+
+  private:
+    Tsepepe::ClangSingleAstFixture ast_fixture;
+    unsigned line_with_declaration;
 };
+}; // namespace FullFunctionDeclarationExpanderTest
 
 TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationExpander]")
 {
@@ -174,19 +202,242 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
                                                             "void foo();\n"
                                                             "}\n",
                                      .line_with_declaration = 3,
-                                     .expected_result = "void Namespace::foo()"}};
+                                     .expected_result = "void Namespace::foo()"},
+        };
 
         auto [description, header_file_content, line_with_declaration, expected_result] = GENERATE(values(test_data));
 
         INFO(description);
 
-        using namespace clang;
-        auto matcher{
-            ast_matchers::functionDecl(isDeclaredAtLine(line_with_declaration)).bind("function_at_line_matcher")};
-
-        ClangSingleAstFixture ast_fixture{header_file_content};
-        auto function{ast_fixture.get_first_match<FunctionDecl>(matcher)};
-
-        CHECK(fully_expand_function_declaration(function, ast_fixture.get_source_manager()) == expected_result);
+        SingleHeaderTestFixture fixture{header_file_content, line_with_declaration};
+        CHECK(fully_expand_function_declaration(fixture.get_function_declaration(), fixture.get_source_manager())
+              == expected_result);
     }
 }
+/*
+    Scenario: Ignores virtual and override keywords
+        Given Header file with content
+        """
+        class Derived : public Base
+        {
+            virtual void do_stuff() override;
+        };
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        void Derived::do_stuff()
+        """
+        And No errors are emitted
+
+    Scenario: Ignores static keyword
+        Given Header file with content
+        """
+        class Class
+        {
+        public:
+            static Class make();
+        }
+        """
+        When Method definition is generated from declaration at line 4
+        Then Stdout contains
+        """
+        Class Class::make()
+        """
+        And No errors are emitted
+
+    Scenario: Ignores attributes
+        Given Header file with content
+        """
+        class Yolo
+        {
+            [[nodiscard]] [[no_unique_address]] int get();
+        }
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        int Yolo::get()
+        """
+        And No errors are emitted
+
+    Scenario: Preserves const specifier
+        Given Header file with content
+        """
+        class Benc
+        {
+            void do_stuff() const;
+        }
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        void Benc::do_stuff() const
+        """
+        And No errors are emitted
+
+    Scenario: Preserves noexcept specifier
+        Given Header file with content
+        """
+        class Benc
+        {
+            void do_stuff() noexcept;
+        }
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        void Benc::do_stuff() noexcept
+        """
+        And No errors are emitted
+
+    Scenario: Preserves noexcept expression
+        Given Header file with content
+        """
+        class Benc
+        {
+            void do_stuff() noexcept(false);
+        }
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        void Benc::do_stuff() noexcept(false)
+        """
+        And No errors are emitted
+
+    Scenario: Preserves ref-qualifier
+        Given Header file with content
+        """
+        struct Class
+        {
+            Class& get() &;
+            Class&& get() &&;
+            const Class& get() const&;
+        };
+        """
+        When Method definition is generated from declaration at line 4
+        Then Stdout contains
+        """
+        Class && Class::get() &&
+        """
+        And No errors are emitted
+
+    Scenario: From plain function declaration
+        Given Header file with content
+        """
+        unsigned long long bar();
+        """
+        When Method definition is generated from declaration at line 1
+        Then Stdout contains
+        """
+        unsigned long long bar()
+        """
+        And No errors are emitted
+
+    Scenario: From multiline declaration
+        Given Header file with content
+        """
+        #include <string>
+        #include <vector>
+
+        struct Class
+        {
+            void foo(unsigned int number,
+                     std::string,
+                     std::vector<std::string> strings);
+        };
+        """
+        When Method definition is generated from declaration at line 6
+        Then Stdout contains
+        """
+        void Class::foo(unsigned int number, std::string, std::vector<std::string> strings)
+        """
+        And No errors are emitted
+
+    Scenario: From operator overload which has no explicit return type
+        Given Header file with content
+        """
+        struct Class
+        {
+            operator bool();
+        };
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        Class::operator bool()
+        """
+        And No errors are emitted
+
+    Scenario: Skips default parameter
+        Given Header file with content
+        """
+        struct Class
+        {
+            void foo(unsigned int i, bool do_yolo = true);
+        };
+        """
+        When Method definition is generated from declaration at line 3
+        Then Stdout contains
+        """
+        void Class::foo(unsigned int i, bool do_yolo)
+        """
+        And No errors are emitted
+
+    Scenario: Skips multiple default parameters
+        Given Header file with content
+        """
+        struct Class
+        {
+            struct Nested
+            {
+            };
+
+            void foo(Nested, unsigned i, bool do_yolo = false, std::string s= "bang", float val =2.4f);
+        };
+        """
+        When Method definition is generated from declaration at line 7
+        Then Stdout contains
+        """
+        void Class::foo(Nested, unsigned i, bool do_yolo, std::string s, float val)
+        """
+        And No errors are emitted
+
+    Scenario: Raises error if no definition found
+        Given Header file with content
+        """
+        struct Class
+        {
+            void foo();
+        };
+        """
+        When Method definition is generated from declaration at line 1
+        Then Error is raised
+
+    Scenario: From function returning a nested type defined in another header
+        Given Header File Called "header1.hpp" With Content
+        """
+        struct External
+        {
+            struct Nested
+            {
+            };
+        };
+        """
+        And Header File called "caller.hpp" With Content
+        """
+        #include "header1.hpp"
+        class Caller
+        {
+            External::Nested gimme();
+        };
+        """
+        When Method definition is generated from declaration in file "caller.hpp" at line 4
+        Then Stdout contains
+        """
+        External::Nested Caller::gimme()
+        """
+        And No errors are emitted
+
+*/
