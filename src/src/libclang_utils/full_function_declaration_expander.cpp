@@ -40,13 +40,6 @@ std::string Tsepepe::fully_expand_function_declaration(const FunctionDecl* funct
     LangOptions lang_opts;
     PrintingPolicy printing_policy{lang_opts};
     printing_policy.adjustForCPlusPlus();
-    // printing_policy.FullyQualifiedName = true;
-    // printing_policy.Indentation = 4;
-    // printing_policy.CleanUglifiedParameters = true;
-    // printing_policy.AlwaysIncludeTypeForTemplateArgument = true;
-    // printing_policy.TerseOutput = true;
-    // printing_policy.PolishForDeclaration = true;
-    // printing_policy.PrintInjectedClassNameWithArguments = true;
 
     auto return_type_as_string{get_return_type(function, source_manager, printing_policy)};
     if (not return_type_as_string.empty())
