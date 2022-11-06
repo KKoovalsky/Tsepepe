@@ -211,6 +211,33 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
                                                             "}\n",
                                      .line_with_declaration = 3,
                                      .expected_result = "void Namespace::foo()"},
+            SingleHeaderFileTestData{.description = "Ignores virtual and override keywords",
+                                     .header_file_content = "struct Base\n"
+                                                            "{\n"
+                                                            "    virtual void do_stuff() = 0;\n"
+                                                            "};\n"
+                                                            "class Derived : public Base\n"
+                                                            "{\n"
+                                                            "    virtual void do_stuff() override;\n"
+                                                            "};\n",
+                                     .line_with_declaration = 7,
+                                     .expected_result = "void Derived::do_stuff()"},
+            SingleHeaderFileTestData{.description = "Ignores pure virtual specifier",
+                                     .header_file_content = "struct Base\n"
+                                                            "{\n"
+                                                            "    virtual void do_stuff() = 0;\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "void Base::do_stuff()"},
+            SingleHeaderFileTestData{.description = "Ignores static keyword",
+                                     .header_file_content = "class Class\n"
+                                                            "{\n"
+                                                            "public:\n"
+                                                            "\n"
+                                                            "    static Class make();\n"
+                                                            "};\n",
+                                     .line_with_declaration = 5,
+                                     .expected_result = "Class Class::make()"},
         };
 
         auto [description, header_file_content, line_with_declaration, expected_result] = GENERATE(values(test_data));
@@ -222,67 +249,11 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
               == expected_result);
     }
 
-    SECTION("Handles virtual and override keyword")
+    SECTION("Handles attribute specifiers")
     {
-        std::string header_file_content{
-            "struct Base\n"
-            "{\n"
-            "    virtual void do_stuff() = 0;\n"
-            "};\n"
-            "class Derived : public Base\n"
-            "{\n"
-            "    virtual void do_stuff() override;\n"
-            "};\n"};
-        unsigned line_with_declaration{7};
-
-        auto [description, options, expected_result] =
-            GENERATE(values({TestWithOptionsTestData{.description = "No keyword is ignored by default",
-                                                     .options = {},
-                                                     .expected_result = "virtual void Derived::do_stuff() override"},
-                             TestWithOptionsTestData{.description = "Only virtual keyword is ignored",
-                                                     .options = {.method_opts = {.keep_virtual = 0}},
-                                                     .expected_result = "void Derived::do_stuff() override"}}));
-
-        INFO(description);
-
-        SingleHeaderTestFixture fixture{header_file_content, line_with_declaration};
-        CHECK(
-            fully_expand_function_declaration(fixture.get_function_declaration(), fixture.get_source_manager(), options)
-            == expected_result);
     }
 }
 /*
-    Scenario: Ignores virtual and override keywords
-        Given Header file with content
-        """
-        class Derived : public Base
-        {
-            virtual void do_stuff() override;
-        };
-        """
-        When Method definition is generated from declaration at line 3
-        Then Stdout contains
-        """
-        void Derived::do_stuff()
-        """
-        And No errors are emitted
-
-    Scenario: Ignores static keyword
-        Given Header file with content
-        """
-        class Class
-        {
-        public:
-            static Class make();
-        }
-        """
-        When Method definition is generated from declaration at line 4
-        Then Stdout contains
-        """
-        Class Class::make()
-        """
-        And No errors are emitted
-
     Scenario: Ignores attributes
         Given Header file with content
         """
@@ -357,18 +328,6 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
         Then Stdout contains
         """
         Class && Class::get() &&
-        """
-        And No errors are emitted
-
-    Scenario: From plain function declaration
-        Given Header file with content
-        """
-        unsigned long long bar();
-        """
-        When Method definition is generated from declaration at line 1
-        Then Stdout contains
-        """
-        unsigned long long bar()
         """
         And No errors are emitted
 

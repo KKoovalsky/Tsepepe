@@ -15,16 +15,7 @@ struct FullFunctionDeclarationExpanderOptions
 {
     // C++20 allows default bitfield values with the {} brackets.
 
-    struct MethodDeclarationExpandingOptions
-    {
-        unsigned keep_override : 1 {1};
-        unsigned keep_virtual : 1 {1};
-    };
-
-    MethodDeclarationExpandingOptions method_opts{};
-
-    unsigned keep_static : 1 {1};
-    unsigned keep_attributes : 1 {1};
+    unsigned keep_attribute_specifiers : 1 {1};
 };
 
 std::string fully_expand_function_declaration(
