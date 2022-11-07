@@ -27,6 +27,8 @@ static std::string get_standard_attributes(const FunctionDecl*, const SourceMana
 static std::string get_return_type(const FunctionDecl*, const SourceManager&, const PrintingPolicy&);
 static std::string stringify_template_specialization(const TemplateSpecializationType*, const PrintingPolicy&);
 static std::string get_parameters(const FunctionDecl*, const SourceManager&, const PrintingPolicy&);
+static std::string get_ref_qualifier(const CXXMethodDecl*);
+static std::string get_noexcept_qualifier(const CXXMethodDecl*, const SourceManager&);
 static std::string join(const std::vector<std::string>& string_vec, std::string delim = ", ");
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -62,6 +64,24 @@ std::string Tsepepe::fully_expand_function_declaration(const FunctionDecl* funct
 
     result.append(function->getQualifiedNameAsString());
     result.append(get_parameters(function, source_manager, printing_policy));
+
+    if (auto method{dynamic_cast<const CXXMethodDecl*>(function)}; method != nullptr)
+    {
+        if (method->isConst())
+            result.append(" const");
+        auto ref_qualifier{get_ref_qualifier(method)};
+        if (not ref_qualifier.empty())
+        {
+            result += ' ';
+            result.append(ref_qualifier);
+        }
+        auto noexcept_qualifier{get_noexcept_qualifier(method, source_manager)};
+        if (not noexcept_qualifier.empty())
+        {
+            result += ' ';
+            result.append(noexcept_qualifier);
+        }
+    }
 
     return result;
 }
@@ -159,6 +179,25 @@ get_parameters(const FunctionDecl* node, const SourceManager& source_manager, co
     std::ranges::transform(params, std::back_inserter(params_as_string), param_to_string);
 
     return '(' + join(params_as_string) + ')';
+}
+
+static std::string get_ref_qualifier(const CXXMethodDecl* node)
+{
+    auto ref_qualifier{node->getRefQualifier()};
+    if (ref_qualifier == RefQualifierKind::RQ_LValue)
+        return "&";
+    else if (ref_qualifier == RefQualifierKind::RQ_RValue)
+        return "&&";
+    return "";
+}
+
+static std::string get_noexcept_qualifier(const CXXMethodDecl* node, const SourceManager& source_manager)
+{
+    auto source_range{node->getExceptionSpecSourceRange()};
+    if (source_range.isInvalid())
+        return "";
+
+    return Tsepepe::source_range_content_to_string(source_range, source_manager, node->getLangOpts());
 }
 
 static std::string join(const std::vector<std::string>& string_vec, std::string delim)

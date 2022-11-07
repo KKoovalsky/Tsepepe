@@ -181,6 +181,13 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
                                                             "};\n",
                                      .line_with_declaration = 4,
                                      .expected_result = "Class::~Class()"},
+            SingleHeaderFileTestData{.description = "From operator overload which has no explicit return type",
+                                     .header_file_content = "struct Class\n"
+                                                            "{\n"
+                                                            "    operator bool();\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "Class::operator bool()"},
             SingleHeaderFileTestData{.description = "From method returning templated type",
                                      .header_file_content = "#include <variant>\n"
                                                             "namespace Context\n"
@@ -238,6 +245,72 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
                                                             "};\n",
                                      .line_with_declaration = 5,
                                      .expected_result = "Class Class::make()"},
+            SingleHeaderFileTestData{.description = "Preserves const specifier",
+                                     .header_file_content = "class Benc\n"
+                                                            "{\n"
+                                                            "    void do_stuff() const;\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "void Benc::do_stuff() const"},
+            SingleHeaderFileTestData{.description = "Preserves noexcept specifier",
+                                     .header_file_content = "class Benc\n"
+                                                            "{\n"
+                                                            "    void do_stuff() noexcept;\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "void Benc::do_stuff() noexcept"},
+            SingleHeaderFileTestData{.description = "Preserves noexcept expression",
+                                     .header_file_content = "class Benc\n"
+                                                            "{\n"
+                                                            "    void do_stuff() noexcept(false);\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "void Benc::do_stuff() noexcept(false)"},
+            SingleHeaderFileTestData{.description = "Preserves ref-qualifier",
+                                     .header_file_content = "struct Class\n"
+                                                            "{\n"
+                                                            "    Class& get() &;\n"
+                                                            "    Class&& get() &&;\n"
+                                                            "    const Class& get() const&;\n"
+                                                            "};\n",
+                                     .line_with_declaration = 4,
+                                     .expected_result = "Class && Class::get() &&"},
+            SingleHeaderFileTestData{
+                .description = "From multiline declaration",
+                .header_file_content = "#include <string>\n"
+                                       "#include <vector>\n"
+                                       "\n"
+                                       "struct Class\n"
+                                       "{\n"
+                                       "    void foo(unsigned int number,\n"
+                                       "             std::string,\n"
+                                       "             std::vector<std::string> strings);\n"
+                                       "};\n",
+                .line_with_declaration = 6,
+                .expected_result =
+                    "void Class::foo(unsigned int number, std::string, std::vector<std::string> strings)"},
+            SingleHeaderFileTestData{.description = "Skips default parameter",
+                                     .header_file_content = "struct Class\n"
+                                                            "{\n"
+                                                            "    void foo(unsigned int i, bool do_yolo = true);\n"
+                                                            "};\n",
+                                     .line_with_declaration = 3,
+                                     .expected_result = "void Class::foo(unsigned int i, bool do_yolo)"},
+            SingleHeaderFileTestData{
+                .description = "Skips multiple default parameters",
+                .header_file_content = "#include <string>\n"
+                                       "struct Class\n"
+                                       "{\n"
+                                       "    struct Nested\n"
+                                       "    {\n"
+                                       "    };\n"
+                                       "\n"
+                                       "    void foo(Nested, unsigned i, bool do_yolo = false, "
+                                       "std::string s= \"bang\", float val =2.4f);\n"
+                                       "};\n",
+                .line_with_declaration = 8,
+                .expected_result =
+                    "void Class::foo(Class::Nested, unsigned int i, bool do_yolo, std::string s, float val)"},
         };
 
         auto [description, header_file_content, line_with_declaration, expected_result] = GENERATE(values(test_data));
@@ -289,148 +362,6 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
     }
 }
 /*
-    Scenario: Preserves const specifier
-        Given Header file with content
-        """
-        class Benc
-        {
-            void do_stuff() const;
-        }
-        """
-        When Method definition is generated from declaration at line 3
-        Then Stdout contains
-        """
-        void Benc::do_stuff() const
-        """
-        And No errors are emitted
-
-    Scenario: Preserves noexcept specifier
-        Given Header file with content
-        """
-        class Benc
-        {
-            void do_stuff() noexcept;
-        }
-        """
-        When Method definition is generated from declaration at line 3
-        Then Stdout contains
-        """
-        void Benc::do_stuff() noexcept
-        """
-        And No errors are emitted
-
-    Scenario: Preserves noexcept expression
-        Given Header file with content
-        """
-        class Benc
-        {
-            void do_stuff() noexcept(false);
-        }
-        """
-        When Method definition is generated from declaration at line 3
-        Then Stdout contains
-        """
-        void Benc::do_stuff() noexcept(false)
-        """
-        And No errors are emitted
-
-    Scenario: Preserves ref-qualifier
-        Given Header file with content
-        """
-        struct Class
-        {
-            Class& get() &;
-            Class&& get() &&;
-            const Class& get() const&;
-        };
-        """
-        When Method definition is generated from declaration at line 4
-        Then Stdout contains
-        """
-        Class && Class::get() &&
-        """
-        And No errors are emitted
-
-    Scenario: From multiline declaration
-        Given Header file with content
-        """
-        #include <string>
-        #include <vector>
-
-        struct Class
-        {
-            void foo(unsigned int number,
-                     std::string,
-                     std::vector<std::string> strings);
-        };
-        """
-        When Method definition is generated from declaration at line 6
-        Then Stdout contains
-        """
-        void Class::foo(unsigned int number, std::string, std::vector<std::string> strings)
-        """
-        And No errors are emitted
-
-    Scenario: From operator overload which has no explicit return type
-        Given Header file with content
-        """
-        struct Class
-        {
-            operator bool();
-        };
-        """
-        When Method definition is generated from declaration at line 3
-        Then Stdout contains
-        """
-        Class::operator bool()
-        """
-        And No errors are emitted
-
-    Scenario: Skips default parameter
-        Given Header file with content
-        """
-        struct Class
-        {
-            void foo(unsigned int i, bool do_yolo = true);
-        };
-        """
-        When Method definition is generated from declaration at line 3
-        Then Stdout contains
-        """
-        void Class::foo(unsigned int i, bool do_yolo)
-        """
-        And No errors are emitted
-
-    Scenario: Skips multiple default parameters
-        Given Header file with content
-        """
-        struct Class
-        {
-            struct Nested
-            {
-            };
-
-            void foo(Nested, unsigned i, bool do_yolo = false, std::string s= "bang", float val =2.4f);
-        };
-        """
-        When Method definition is generated from declaration at line 7
-        Then Stdout contains
-        """
-        void Class::foo(Nested, unsigned i, bool do_yolo, std::string s, float val)
-        """
-        And No errors are emitted
-
-    Scenario: Raises error if no definition found
-        Given Header file with content
-        """
-        struct Class
-        {
-            void foo();
-        };
-        """
-        When Method definition is generated from declaration at line 1
-        Then Error is raised
-
     Scenario: From function returning a nested type defined in another header
         Given Header File Called "header1.hpp" With Content
         """
