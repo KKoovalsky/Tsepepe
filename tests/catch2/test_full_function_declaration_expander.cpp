@@ -251,24 +251,44 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
 
     SECTION("Handles attribute specifiers")
     {
+        GIVEN("Method declaration with attribute specifiers")
+        {
+            std::string header_file_content{
+                "struct Class\n"
+                "{\n"
+                "[[nodiscard]] [[gnu::const]] int get();\n"
+                "};\n"};
+            unsigned line_with_declaration{3};
+
+            WHEN("Attribute specifiers are ignored")
+            {
+                FullFunctionDeclarationExpanderOptions options{.ignore_attribute_specifiers = 1};
+
+                THEN("No attribute specifier appears in the full declaration")
+                {
+                    SingleHeaderTestFixture fixture{header_file_content, line_with_declaration};
+                    CHECK(fully_expand_function_declaration(
+                              fixture.get_function_declaration(), fixture.get_source_manager(), options)
+                          == "int Class::get()");
+                }
+            }
+
+            WHEN("Attribute specifiers are not ignored")
+            {
+                FullFunctionDeclarationExpanderOptions options{.ignore_attribute_specifiers = 0};
+
+                THEN("Attribute specifiers do appear in the full declaration")
+                {
+                    SingleHeaderTestFixture fixture{header_file_content, line_with_declaration};
+                    CHECK(fully_expand_function_declaration(
+                              fixture.get_function_declaration(), fixture.get_source_manager(), options)
+                          == "[[nodiscard]] [[gnu::const]] int Class::get()");
+                }
+            }
+        }
     }
 }
 /*
-    Scenario: Ignores attributes
-        Given Header file with content
-        """
-        class Yolo
-        {
-            [[nodiscard]] [[no_unique_address]] int get();
-        }
-        """
-        When Method definition is generated from declaration at line 3
-        Then Stdout contains
-        """
-        int Yolo::get()
-        """
-        And No errors are emitted
-
     Scenario: Preserves const specifier
         Given Header file with content
         """

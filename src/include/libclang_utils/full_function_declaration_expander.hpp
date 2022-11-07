@@ -15,7 +15,8 @@ struct FullFunctionDeclarationExpanderOptions
 {
     // C++20 allows default bitfield values with the {} brackets.
 
-    unsigned keep_attribute_specifiers : 1 {1};
+    //! Whether to include "[[...]]" attibutes in the final stringified declaration.
+    unsigned ignore_attribute_specifiers : 1 {0};
 };
 
 std::string fully_expand_function_declaration(
