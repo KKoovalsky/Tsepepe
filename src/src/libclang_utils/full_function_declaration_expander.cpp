@@ -2,6 +2,10 @@
  * @file	full_function_declaration_expander.cpp
  * @brief	Implements the full expanding of the the function declaration.
  */
+#include <algorithm>
+#include <iterator>
+#include <numeric>
+
 #include "libclang_utils/full_function_declaration_expander.hpp"
 
 #include <clang/AST/Attr.h>
@@ -12,13 +16,30 @@
 #include <clang/Basic/SourceLocation.h>
 #include <clang/Lex/Lexer.h>
 
-#include <algorithm>
-#include <iterator>
-#include <numeric>
-
 #include "libclang_utils/misc_utils.hpp"
 
 using namespace clang;
+
+// --------------------------------------------------------------------------------------------------------------------
+// Private helper types
+// --------------------------------------------------------------------------------------------------------------------
+
+// --------------------------------------------------------------------------------------------------------------------
+// Templates
+// --------------------------------------------------------------------------------------------------------------------
+template<typename BegIt, typename EndIt>
+static std::string join(BegIt begin, EndIt end, std::string delim)
+{
+    if (begin == end)
+        return "";
+
+    std::string init{*begin};
+    init.reserve(120);
+    return std::accumulate(
+        std::next(begin), end, std::move(init), [&delim](std::string result, const std::string& elem) {
+            return std::move(result) + delim + elem;
+        });
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 // Private declarations
@@ -41,49 +62,30 @@ std::string Tsepepe::fully_expand_function_declaration(const FunctionDecl* funct
     std::string result;
     result.reserve(120);
 
+    std::vector<std::string> result_parted;
+    result.reserve(8);
+
     LangOptions lang_opts;
     PrintingPolicy printing_policy{lang_opts};
     printing_policy.adjustForCPlusPlus();
 
     if (not options.ignore_attribute_specifiers)
-    {
-        auto standard_attributes_stringified{get_standard_attributes(function, source_manager)};
-        if (not standard_attributes_stringified.empty())
-        {
-            result.append(std::move(standard_attributes_stringified));
-            result += ' ';
-        }
-    }
+        result_parted.emplace_back(get_standard_attributes(function, source_manager));
 
-    auto return_type_as_string{get_return_type(function, source_manager, printing_policy)};
-    if (not return_type_as_string.empty())
-    {
-        result.append(std::move(return_type_as_string));
-        result += ' ';
-    }
-
-    result.append(function->getQualifiedNameAsString());
-    result.append(get_parameters(function, source_manager, printing_policy));
+    result_parted.emplace_back(get_return_type(function, source_manager, printing_policy));
+    result_parted.emplace_back(function->getQualifiedNameAsString()
+                               + get_parameters(function, source_manager, printing_policy));
 
     if (auto method{dynamic_cast<const CXXMethodDecl*>(function)}; method != nullptr)
     {
-        if (method->isConst())
-            result.append(" const");
-        auto ref_qualifier{get_ref_qualifier(method)};
-        if (not ref_qualifier.empty())
-        {
-            result += ' ';
-            result.append(ref_qualifier);
-        }
-        auto noexcept_qualifier{get_noexcept_qualifier(method, source_manager)};
-        if (not noexcept_qualifier.empty())
-        {
-            result += ' ';
-            result.append(noexcept_qualifier);
-        }
+        result_parted.emplace_back(method->isConst() ? "const" : "");
+        result_parted.emplace_back(get_ref_qualifier(method));
+        result_parted.emplace_back(get_noexcept_qualifier(method, source_manager));
     }
 
-    return result;
+    auto [end, _] = std::ranges::remove_if(result_parted, [](const auto& s) { return s.empty(); });
+    auto begin{std::begin(result_parted)};
+    return join(begin, end, " ");
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -202,15 +204,6 @@ static std::string get_noexcept_qualifier(const CXXMethodDecl* node, const Sourc
 
 static std::string join(const std::vector<std::string>& string_vec, std::string delim)
 {
-    if (string_vec.size() == 0)
-        return "";
-
-    std::string init{string_vec[0]};
-    init.reserve(120);
-    return std::accumulate(
-        std::next(std::begin(string_vec)),
-        std::end(string_vec),
-        std::move(init),
-        [&delim](std::string result, const std::string& elem) { return std::move(result) + delim + elem; });
+    return join(std::begin(string_vec), std::end(string_vec), std::move(delim));
 }
 
