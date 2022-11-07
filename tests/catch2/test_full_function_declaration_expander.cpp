@@ -208,6 +208,40 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
                                      .line_with_declaration = 11,
                                      .expected_result = "std::variant<Context::One, Context::Two, Context::Three, "
                                                         "Context::Class::Four> Context::Class::gimme()"},
+            SingleHeaderFileTestData{.description = "From method returning sugarized std:: type",
+                                     .header_file_content = "#include <string>\n"
+                                                            "struct Class\n"
+                                                            "{\n"
+                                                            "    std::string get();\n"
+                                                            "};\n",
+                                     .line_with_declaration = 4,
+                                     .expected_result = "std::string Class::get()"},
+            SingleHeaderFileTestData{.description = "From method taking sugarized std:: type",
+                                     .header_file_content = "#include <string>\n"
+                                                            "struct Class\n"
+                                                            "{\n"
+                                                            "    void get(std::string);\n"
+                                                            "};\n",
+                                     .line_with_declaration = 4,
+                                     .expected_result = "void Class::get(std::string)"},
+            SingleHeaderFileTestData{.description = "From method returning an aliased type",
+                                     .header_file_content = "#include <string>\n"
+                                                            "using String = std::string;\n"
+                                                            "struct Class\n"
+                                                            "{\n"
+                                                            "    String get();\n"
+                                                            "};\n",
+                                     .line_with_declaration = 5,
+                                     .expected_result = "String Class::get()"},
+            SingleHeaderFileTestData{.description = "From method taking an aliased type",
+                                     .header_file_content = "#include <string>\n"
+                                                            "using String = std::string;\n"
+                                                            "struct Class\n"
+                                                            "{\n"
+                                                            "    void get(String);\n"
+                                                            "};\n",
+                                     .line_with_declaration = 5,
+                                     .expected_result = "void Class::get(String)"},
             SingleHeaderFileTestData{.description = "From a plain function declaration",
                                      .header_file_content = "#include <vector>\n"
                                                             "#include <string>\n"

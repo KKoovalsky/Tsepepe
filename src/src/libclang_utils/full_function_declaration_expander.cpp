@@ -8,6 +8,7 @@
 
 #include "libclang_utils/full_function_declaration_expander.hpp"
 
+#include <clang/AST/ASTContext.h>
 #include <clang/AST/Attr.h>
 #include <clang/AST/DeclCXX.h>
 #include <clang/AST/PrettyPrinter.h>
@@ -112,12 +113,7 @@ struct Expander
         if (not has_explicit_return_type(node))
             return "";
 
-        auto ret_qual_type{node->getReturnType()};
-        auto ret_type{ret_qual_type.getTypePtr()};
-        if (auto template_spec_type{ret_type->getAs<TemplateSpecializationType>()}; template_spec_type != nullptr)
-            return stringify_template_specialization(template_spec_type);
-
-        return ret_qual_type.getAsString(printing_policy);
+        return type_to_string(node->getReturnType(), node->getASTContext());
     }
 
     std::string stringify_template_specialization(const TemplateSpecializationType* template_spec_type) const
@@ -150,7 +146,7 @@ struct Expander
     std::string get_parameters(const FunctionDecl* node) const
     {
         auto param_to_string{[&](const ParmVarDecl* param) {
-            auto result{param->getType().getAsString(printing_policy)};
+            auto result{type_to_string(param->getType(), node->getASTContext())};
             auto name{param->getQualifiedNameAsString()};
             if (not name.empty())
             {
@@ -185,6 +181,28 @@ struct Expander
             return "";
 
         return Tsepepe::source_range_content_to_string(source_range, source_manager, node->getLangOpts());
+    }
+
+    std::string type_to_string(QualType qual_type, const ASTContext& ast_context) const
+    {
+        auto is_elaborated_type{[&](const QualType& qual_type) {
+            return qual_type.getTypePtr()->getAs<ElaboratedType>() != nullptr;
+        }};
+
+        if (is_elaborated_type(qual_type))
+            qual_type = qual_type.getSingleStepDesugaredType(ast_context);
+
+        auto type{qual_type.getTypePtr()};
+
+        // TypedefName type are, according to clang AST dump, not only the 'typedef' created types, but also aliases
+        // created with using. E.g. std::string is such a TypedefName type, and we don't want to desugarize it down
+        // to std::basic_string<char>. We don't want to desugarize type aliases as well, therefore we print them as
+        // they are.
+        if (not type->isTypedefNameType())
+            if (auto template_spec_type{type->getAs<TemplateSpecializationType>()}; template_spec_type != nullptr)
+                return stringify_template_specialization(template_spec_type);
+
+        return qual_type.getAsString(printing_policy);
     }
 
     static inline const LangOptions lang_options;
