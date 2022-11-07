@@ -11,10 +11,13 @@
 #include "libclang_utils/full_function_declaration_expander.hpp"
 
 #include "clang_ast_fixtures.hpp"
-#include "clang/AST/Decl.h"
-#include "clang/ASTMatchers/ASTMatchers.h"
-#include "clang/ASTMatchers/ASTMatchersMacros.h"
-#include "clang/Basic/SourceManager.h"
+
+#include "directory_tree.hpp"
+
+#include <clang/AST/Decl.h>
+#include <clang/ASTMatchers/ASTMatchers.h>
+#include <clang/ASTMatchers/ASTMatchersMacros.h>
+#include <clang/Basic/SourceManager.h>
 
 AST_MATCHER_P(clang::FunctionDecl, isDeclaredAtLine, unsigned, line)
 {
@@ -322,7 +325,7 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
               == expected_result);
     }
 
-    SECTION("Handles attribute specifiers")
+    SECTION("From function declaration with attribute specifiers")
     {
         GIVEN("Method declaration with attribute specifiers")
         {
@@ -360,31 +363,51 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
             }
         }
     }
-}
-/*
-    Scenario: From function returning a nested type defined in another header
-        Given Header File Called "header1.hpp" With Content
-        """
-        struct External
-        {
-            struct Nested
-            {
-            };
-        };
-        """
-        And Header File called "caller.hpp" With Content
-        """
-        #include "header1.hpp"
-        class Caller
-        {
-            External::Nested gimme();
-        };
-        """
-        When Method definition is generated from declaration in file "caller.hpp" at line 4
-        Then Stdout contains
-        """
-        External::Nested Caller::gimme()
-        """
-        And No errors are emitted
 
-*/
+    SECTION("From function returning a nested type defined in another header")
+    {
+        GIVEN("Header file with a type definition")
+        {
+            DirectoryTree dir_tree{"temp"};
+            dir_tree.create_file("header1.hpp",
+                                 "namespace Namespace {\n"
+                                 "struct External\n"
+                                 "{\n"
+                                 "    struct Nested\n"
+                                 "    {\n"
+                                 "    };\n"
+                                 "};\n"
+                                 "}\n");
+
+            AND_GIVEN("Header file with function declaration which uses that type")
+            {
+                auto path{dir_tree.create_file("yolo.hpp",
+                                               "#include \"header1.hpp\"\n"
+                                               "namespace Namespace {\n"
+                                               "class Caller\n"
+                                               "{\n"
+                                               "    External::Nested gimme(External::Nested);\n"
+                                               "};\n"
+                                               "}\n")};
+                unsigned line_with_declaration{5};
+
+                WHEN("Full function declaration is expanded")
+                {
+                    ClangAstFixture fixture{COMPILATION_DATABASE_DIR, {path}};
+
+                    using namespace clang;
+                    auto matcher{ast_matchers::functionDecl(isDeclaredAtLine(line_with_declaration))
+                                     .bind("function_at_line_matcher")};
+                    auto function{fixture.get_first_match<FunctionDecl>(matcher)};
+                    auto result{fully_expand_function_declaration(function, fixture.get_source_manager())};
+
+                    THEN("The external type is properly expanded")
+                    {
+                        CHECK(result
+                              == "Namespace::External::Nested Namespace::Caller::gimme(Namespace::External::Nested)");
+                    }
+                }
+            }
+        }
+    }
+}
