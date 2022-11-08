@@ -175,4 +175,139 @@ TEST_CASE("Extracts pure virtual functions from abstract class and converts them
             }
         }
     }
+
+    SECTION("Extracts and converts pure virtual functions from a compound interface")
+    {
+        DirectoryTree dir_tree{"temp"};
+
+        GIVEN("One interface")
+        {
+            dir_tree.create_file("runnable.hpp",
+                                 "#include <string>\n"
+                                 "struct Runnable\n"
+                                 "{\n"
+                                 "    virtual void run(std::string name) = 0;\n"
+                                 "    virtual ~Runnable() = default;\n"
+                                 "};\n");
+
+            AND_GIVEN("Another interface")
+            {
+                dir_tree.create_file("printer.hpp",
+                                     "#include <string>\n"
+                                     "#include <vector>\n"
+                                     "struct Printer\n"
+                                     "{\n"
+                                     "    struct PrintingResult\n"
+                                     "    {\n"
+                                     "    };\n"
+                                     "\n"
+                                     "    virtual PrintingResult print(std::vector<std::string> stuff) = 0;\n"
+                                     "    virtual ~Printer() = default;\n"
+                                     "};\n");
+
+                AND_GIVEN("A compound interface created from these two interfaces")
+                {
+                    auto path{dir_tree.create_file("runnable_printer.hpp",
+                                                   "#include \"printer.hpp\"\n"
+                                                   "#include \"runnable.hpp\"\n"
+                                                   "struct RunnablePrinter : Runnable, Printer\n"
+                                                   "{\n"
+                                                   "    virtual ~RunnablePrinter() = default;\n"
+                                                   "};\n")};
+
+                    WHEN("Override declarations are obtained from the compound interface")
+                    {
+
+                        ClangAstFixture fixture{COMPILATION_DATABASE_DIR, {path}};
+                        using namespace clang;
+                        auto matcher{make_class_matcher("RunnablePrinter")};
+                        auto iface{fixture.get_first_match<CXXRecordDecl>(matcher)};
+                        auto result{pure_virtual_functions_to_override_declarations(
+                            iface, "YoloImplementor", fixture.get_source_manager())};
+
+                        THEN("The pure virtual functions from the comprising interfaces are collected")
+                        {
+                            REQUIRE_THAT(result,
+                                         Catch::Matchers::UnorderedEquals(OverrideDeclarations{
+                                             "void run(std::string name) override;",
+                                             "PrintingResult print(std::vector<std::string> stuff) override;"}));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    SECTION("Extracts and converts pure virtual functions from a complex compound interface")
+    {
+        DirectoryTree dir_tree{"temp"};
+
+        GIVEN("One interface")
+        {
+            dir_tree.create_file("display.hpp",
+                                 "#include <vector>\n"
+                                 "struct Display\n"
+                                 "{\n"
+                                 "    using Bytes = std::vector<unsigned char>;\n"
+                                 "    virtual void display(const Bytes&) = 0;\n"
+                                 "    virtual ~Display() = default;\n"
+                                 "};\n");
+
+            AND_GIVEN("Another interface")
+            {
+                dir_tree.create_file("printer.hpp",
+                                     "#include <string>\n"
+                                     "#include <vector>\n"
+                                     "struct Printer\n"
+                                     "{\n"
+                                     "    struct PrintingResult\n"
+                                     "    {\n"
+                                     "    };\n"
+                                     "\n"
+                                     "    virtual PrintingResult print(std::vector<std::string> stuff) = 0;\n"
+                                     "    virtual ~Printer() = default;\n"
+                                     "};\n");
+
+                AND_GIVEN("A compound interface created from these two interfaces")
+                {
+                    dir_tree.create_file("displaying_printer.hpp",
+                                         "#include \"display.hpp\"\n"
+                                         "#include \"printer.hpp\"\n"
+                                         "struct DisplayingPrinter : Display, Printer\n"
+                                         "{\n"
+                                         "    virtual ~DisplayingPrinter() = default;\n"
+                                         "};\n");
+
+                    AND_GIVEN("One more interfaces which extends the compound interface")
+                    {
+                        auto path{dir_tree.create_file("dumpable_displaying_printer.hpp",
+                                                       "#include \"displaying_printer.hpp\"\n"
+                                                       "struct DumpableDisplayingPrinter : DisplayingPrinter\n"
+                                                       "{\n"
+                                                       "    virtual void dump() = 0;\n"
+                                                       "    virtual ~DumpableDisplayingPrinter() = default;\n"
+                                                       "};\n")};
+
+                        WHEN("Override declarations are obtained from the extender of the compound interface")
+                        {
+                            ClangAstFixture fixture{COMPILATION_DATABASE_DIR, {path}};
+                            using namespace clang;
+                            auto matcher{make_class_matcher("DumpableDisplayingPrinter")};
+                            auto iface{fixture.get_first_match<CXXRecordDecl>(matcher)};
+                            auto result{pure_virtual_functions_to_override_declarations(
+                                iface, "YoloImplementor", fixture.get_source_manager())};
+
+                            THEN("All the pure virtual functions are collected")
+                            {
+                                REQUIRE_THAT(result,
+                                             Catch::Matchers::UnorderedEquals(OverrideDeclarations{
+                                                 "void display(const Bytes &) override;",
+                                                 "PrintingResult print(std::vector<std::string> stuff) override;",
+                                                 "void dump() override;"}));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
