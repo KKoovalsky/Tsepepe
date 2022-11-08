@@ -14,12 +14,21 @@ using namespace clang;
 // Private declarations
 // --------------------------------------------------------------------------------------------------------------------
 static std::string shortify(std::string shortified, std::string shorting);
+
+/**
+ * @brief Creates all the nesting scopes for the fully qualified name.
+ *
+ * For example, for a fully qualified name "SomeNamespace::SomeTopLevelClass::SomeNestedClass" will return a vector of
+ * values:
+ *              - SomeNamespace::SomeTopLevelClass::SomeNestedClass::
+ *              - SomeNamespace::SomeTopLevelClass::
+ *              - SomeNamespace::
+ */
 static std::vector<std::string> make_nesting_scopes(const std::string& fully_qualified_name);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-#include <iostream>
 Tsepepe::OverrideDeclarations
 Tsepepe::pure_virtual_functions_to_override_declarations(const clang::CXXRecordDecl* node,
                                                          std::string implementor_fully_qualified_name,

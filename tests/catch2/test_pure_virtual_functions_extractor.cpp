@@ -237,6 +237,7 @@ TEST_CASE("Extracts pure virtual functions from abstract class and converts them
             }
         }
     }
+
     SECTION("Extracts and converts pure virtual functions from a complex compound interface")
     {
         DirectoryTree dir_tree{"temp"};
