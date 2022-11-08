@@ -191,23 +191,40 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
                                                             "};\n",
                                      .line_with_declaration = 3,
                                      .expected_result = "Class::operator bool()"},
-            SingleHeaderFileTestData{.description = "From method returning templated type",
-                                     .header_file_content = "#include <variant>\n"
-                                                            "namespace Context\n"
-                                                            "{\n"
-                                                            "    struct One {};\n"
-                                                            "    struct Two {};\n"
-                                                            "    struct Three {};\n"
-                                                            "\n"
-                                                            "    struct Class\n"
-                                                            "    {\n"
-                                                            "        struct Four {};\n"
-                                                            "        std::variant<One, Two, Three, Four> gimme();\n"
-                                                            "    };\n"
-                                                            "};\n",
-                                     .line_with_declaration = 11,
-                                     .expected_result = "std::variant<Context::One, Context::Two, Context::Three, "
-                                                        "Context::Class::Four> Context::Class::gimme()"},
+            SingleHeaderFileTestData{
+                .description = "From method returning templated type",
+                .header_file_content = "#include <variant>\n"
+                                       "#include <string>\n"
+                                       "namespace Context\n"
+                                       "{\n"
+                                       "    struct One {};\n"
+                                       "    struct Two {};\n"
+                                       "    struct Three {};\n"
+                                       "\n"
+                                       "    struct Class\n"
+                                       "    {\n"
+                                       "        struct Four {};\n"
+                                       "        std::variant<One, Two, Three,std::string, Four> gimme();\n"
+                                       "    };\n"
+                                       "};\n",
+                .line_with_declaration = 12,
+                .expected_result = "std::variant<Context::One, Context::Two, Context::Three, std::string, "
+                                   "Context::Class::Four> Context::Class::gimme()"},
+            SingleHeaderFileTestData{
+                .description = "From method taking templated type as a parameter",
+                .header_file_content = "#include <utility>\n"
+                                       "#include <list>\n"
+                                       "\n"
+                                       "namespace Nested {\n"
+                                       "    struct Record {};\n"
+                                       "}\n"
+                                       "\n"
+                                       "class Class\n"
+                                       "{\n"
+                                       "    void gimme(std::pair<std::list<double>, Nested::Record>);\n"
+                                       "};\n",
+                .line_with_declaration = 10,
+                .expected_result = "void Class::gimme(std::pair<std::list<double>, Nested::Record>)"},
             SingleHeaderFileTestData{.description = "From method returning sugarized std:: type",
                                      .header_file_content = "#include <string>\n"
                                                             "struct Class\n"
