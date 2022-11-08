@@ -16,7 +16,8 @@ namespace Tsepepe
 
 using OverrideDeclarations = std::vector<std::string>;
 
-OverrideDeclarations pure_virtual_functions_to_override_declarations(const clang::CXXRecordDecl*,
+OverrideDeclarations pure_virtual_functions_to_override_declarations(const clang::CXXRecordDecl* interface_node,
+                                                                     std::string implementor_fully_qualified_name,
                                                                      const clang::SourceManager&);
 
 } // namespace Tsepepe

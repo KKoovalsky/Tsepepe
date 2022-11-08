@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_vector.hpp>
 
 #include <clang/ASTMatchers/ASTMatchFinder.h>
@@ -21,25 +22,23 @@
 
 #include "libclang_utils/pure_virtual_functions_extractor.hpp"
 
-namespace fs = std::filesystem;
 using namespace clang;
 
 namespace PureVirtualFunctionsExtractorTest
 {
-struct HeaderFile
-{
-    fs::path path;
-    std::string content;
-};
 
-struct TestData
+struct SingleHeaderTestData
 {
     std::string description;
-    std::vector<HeaderFile> header_file_content;
-    std::string interface_name;
-    std::string header_file_with_interface;
-    std::vector<std::string> expected_result;
+    std::string header_file_content;
+    std::string class_name;
+    Tsepepe::OverrideDeclarations expected_result;
 };
+
+static inline auto make_class_matcher(const std::string& name)
+{
+    return ast_matchers::cxxRecordDecl(ast_matchers::hasName(name)).bind("class");
+}
 
 struct ClangAstClassRetrieverFixture
 {
@@ -51,8 +50,7 @@ struct ClangAstClassRetrieverFixture
     const clang::CXXRecordDecl* retrieve() const
     {
         using namespace clang;
-        auto matcher{ast_matchers::cxxRecordDecl(ast_matchers::hasName(class_name)).bind("class")};
-
+        auto matcher{make_class_matcher(class_name)};
         return ast_fixture.get_first_match<CXXRecordDecl>(matcher);
     };
 
@@ -65,6 +63,7 @@ struct ClangAstClassRetrieverFixture
     Tsepepe::ClangSingleAstFixture ast_fixture;
     std::string class_name;
 };
+
 }; // namespace PureVirtualFunctionsExtractorTest
 
 TEST_CASE("Extracts pure virtual functions from abstract class and converts them to overriding declarations",
@@ -75,27 +74,103 @@ TEST_CASE("Extracts pure virtual functions from abstract class and converts them
 
     DirectoryTree dir_tree{"temp"};
 
-    SECTION("Extracts and converts a single pure virtual function")
+    SECTION("For an interface defined within a single file")
     {
-        GIVEN("An interface")
+        auto [description, header_file_content, interface_name, expected_result] = GENERATE(values({
+            SingleHeaderTestData{.description = "Extracts and converts a single pure virtual function",
+                                 .header_file_content = "struct Interface\n"
+                                                        "{\n"
+                                                        "    virtual void run(unsigned int) = 0;\n"
+                                                        "    virtual ~Interface() = default;\n"
+                                                        "};\n",
+                                 .class_name = "Interface",
+                                 .expected_result = {"void run(unsigned int) override;"}},
+            SingleHeaderTestData{
+                .description = "Extracts and converts multiple pure virtual functions",
+                .header_file_content = "#include <string>\n"
+                                       "#include <vector>\n"
+                                       "struct Iface\n"
+                                       "{\n"
+                                       "    virtual int run(double d) = 0;\n"
+                                       "    virtual std::string gimme(const std::vector<std::string>& some_list) = 0;\n"
+                                       "    virtual ~Iface() = default;\n"
+                                       "};\n",
+                .class_name = "Iface",
+                .expected_result = {"int run(double d) override;",
+                                    "std::string gimme(const std::vector<std::string> & some_list) override;"}},
+            SingleHeaderTestData{.description =
+                                     "Extracts and converts pure virtual functions from a class in a namespace",
+                                 .header_file_content = "namespace Yolo{\n"
+                                                        "struct SomeIface\n"
+                                                        "{\n"
+                                                        "    virtual float gimme(int) = 0;\n"
+                                                        "    virtual ~SomeIface() = default;\n"
+                                                        "};\n"
+                                                        "}\n",
+                                 .class_name = "SomeIface",
+                                 .expected_result = {"float gimme(int) override;"}},
+            SingleHeaderTestData{.description = "Extracts and converts pure virtual functions from a nested class",
+                                 .header_file_content = "struct Yolo\n"
+                                                        "{\n"
+                                                        "    struct SomeIfacez\n"
+                                                        "    {\n"
+                                                        "        virtual float gimme(int) = 0;\n"
+                                                        "        virtual ~SomeIfacez() = default;\n"
+                                                        "    };\n"
+                                                        "};\n",
+                                 .class_name = "SomeIfacez",
+                                 .expected_result = {"float gimme(int) override;"}},
+        }));
+
+        INFO(description);
+
+        ClangAstClassRetrieverFixture fixture{header_file_content, interface_name};
+        auto result{pure_virtual_functions_to_override_declarations(
+            fixture.retrieve(), "SomeImplementer", fixture.get_source_manager())};
+        REQUIRE_THAT(result, Catch::Matchers::Equals(expected_result));
+    }
+
+    SECTION("Shortifies types defined in the same namespace")
+    {
+        DirectoryTree dir_tree{"temp"};
+        GIVEN("A file with some common type, defined within a common namespace")
         {
-            std::string iface_def{
-                "struct Interface\n"
-                "{\n"
-                "    virtual void run(unsigned int) = 0;\n"
-                "    virtual ~Interface() = default;\n"
-                "};\n"};
-
-            WHEN("Override declarations are extracted")
+            dir_tree.create_file("common.hpp",
+                                 "namespace Namespace {\n"
+                                 "struct External\n"
+                                 "{\n"
+                                 "    struct Nested\n"
+                                 "    {\n"
+                                 "    };\n"
+                                 "};\n"
+                                 "}\n");
+            AND_GIVEN("An interface defined within the common namespace. The interface uses the common type.")
             {
-                ClangAstClassRetrieverFixture fixture{iface_def, "Interface"};
-                auto result{
-                    pure_virtual_functions_to_override_declarations(fixture.retrieve(), fixture.get_source_manager())};
+                auto path{dir_tree.create_file("ifejs.hpp",
+                                               "#include \"common.hpp\"\n"
+                                               "namespace Namespace {\n"
+                                               "struct Ifejs\n"
+                                               "{\n"
+                                               "    virtual External::Nested gimme(External::Nested) = 0;\n"
+                                               "    virtual ~Ifejs() = default;\n"
+                                               "};\n"
+                                               "}\n")};
 
-                THEN("The proper result is obtained")
+                WHEN("Override declarations are collected from the interface")
                 {
-                    REQUIRE_THAT(result,
-                                 Catch::Matchers::Equals(OverrideDeclarations{"void run(unsigned int) override;"}));
+                    ClangAstFixture fixture{COMPILATION_DATABASE_DIR, {path}};
+                    using namespace clang;
+                    auto matcher{make_class_matcher("Ifejs")};
+                    auto iface{fixture.get_first_match<CXXRecordDecl>(matcher)};
+                    auto result{pure_virtual_functions_to_override_declarations(
+                        iface, "Namespace::SomeImplementer", fixture.get_source_manager())};
+
+                    THEN("Types within the same namespace are shortified")
+                    {
+                        REQUIRE_THAT(result,
+                                     Catch::Matchers::Equals(
+                                         OverrideDeclarations{"External::Nested gimme(External::Nested) override;"}));
+                    }
                 }
             }
         }
