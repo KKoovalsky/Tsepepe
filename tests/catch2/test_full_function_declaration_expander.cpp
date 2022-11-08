@@ -444,4 +444,44 @@ TEST_CASE("Function declarations are expanded fully", "[FullFunctionDeclarationE
             }
         }
     }
+    SECTION("From function returning and taking an aliased type defined in another header")
+    {
+        GIVEN("An alias defined in one header")
+        {
+            DirectoryTree dir_tree{"temp"};
+
+            dir_tree.create_file("hehe.hpp",
+                                 "#include <string_view>\n"
+                                 "#include <array>\n"
+                                 "namespace Namespace {\n"
+                                 "using StringViewArray = std::array<std::string_view, 51>;\n"
+                                 "}\n");
+
+            AND_GIVEN("Header file with function declaration which uses that type")
+            {
+                auto path{dir_tree.create_file("user.hpp",
+                                               "#include \"hehe.hpp\"\n"
+                                               "\n"
+                                               "using namespace Namespace;\n"
+                                               "StringViewArray transform(const StringViewArray&);\n")};
+                unsigned line_with_declaration{4};
+
+                WHEN("Full function declaration is expanded")
+                {
+                    ClangAstFixture fixture{COMPILATION_DATABASE_DIR, {path}};
+
+                    using namespace clang;
+                    auto matcher{ast_matchers::functionDecl(isDeclaredAtLine(line_with_declaration))
+                                     .bind("function_at_line_matcher")};
+                    auto function{fixture.get_first_match<FunctionDecl>(matcher)};
+                    auto result{fully_expand_function_declaration(function, fixture.get_source_manager())};
+
+                    THEN("The external type is properly expanded")
+                    {
+                        CHECK(result == "Namespace::StringViewArray transform(const Namespace::StringViewArray &)");
+                    }
+                }
+            }
+        }
+    }
 }
