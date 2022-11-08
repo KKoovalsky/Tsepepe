@@ -3,6 +3,9 @@
  * @brief	Implements the pure virtual functions extractor.
  */
 
+#include <regex>
+
+#include "libclang_utils/full_function_declaration_expander.hpp"
 #include "libclang_utils/pure_virtual_functions_extractor.hpp"
 
 using namespace clang;
@@ -21,9 +24,12 @@ Tsepepe::pure_virtual_functions_to_override_declarations(const clang::CXXRecordD
     OverrideDeclarations override_declarations;
 
     auto append_override_declaration{[&](const CXXMethodDecl* method) {
+        auto declaration{Tsepepe::fully_expand_function_declaration(method, source_manager)};
+        auto interface_nesting_prefix{method->getParent()->getQualifiedNameAsString() + "::"};
+        declaration = std::regex_replace(declaration, std::regex{interface_nesting_prefix}, "");
+        declaration.append(" override;");
+        override_declarations.emplace_back(std::move(declaration));
         // TODO
-        // 1. Get the full method declaration.
-        // 2. Shortify nesting from the base class.
         // 3. Shortify nesting from the namespace(s), the derived class is in.
     }};
 

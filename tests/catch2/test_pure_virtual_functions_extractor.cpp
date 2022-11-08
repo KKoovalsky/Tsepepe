@@ -17,6 +17,8 @@
 
 #include "directory_tree.hpp"
 
+#include "clang_ast_fixtures.hpp"
+
 #include "libclang_utils/pure_virtual_functions_extractor.hpp"
 
 namespace fs = std::filesystem;
@@ -39,41 +41,30 @@ struct TestData
     std::vector<std::string> expected_result;
 };
 
-struct ClangSingleAstFixture
+struct ClangAstClassRetrieverFixture
 {
-    explicit ClangSingleAstFixture(const std::string& iface_name, const std::string& header_file_content) :
-        ast_unit{tooling::buildASTFromCode(header_file_content)}
+    ClangAstClassRetrieverFixture(const std::string& header_file_content, std::string class_name) :
+        ast_fixture{header_file_content}, class_name{std::move(class_name)}
     {
-        auto iface_matcher{ast_matchers::cxxRecordDecl(ast_matchers::hasName(iface_name), ast_matchers::hasDefinition())
-                               .bind("iface")};
-        auto matches{clang::ast_matchers::match(iface_matcher, ast_unit->getASTContext())};
-        if (matches.size() == 0)
-            throw std::runtime_error{"Failed to find " + iface_name
-                                     + "within the file content: " + header_file_content};
-
-        const auto& first_match{matches[0]};
-        auto node{first_match.getNodeAs<CXXRecordDecl>("class")};
-        if (node == nullptr)
-            throw std::runtime_error{"Failed to get node for " + iface_name
-                                     + "within the file content: " + header_file_content};
-        iface_node = node;
     }
 
-    const CXXRecordDecl* get_iface_node() const
+    const clang::CXXRecordDecl* retrieve() const
     {
-        return iface_node;
-    }
+        using namespace clang;
+        auto matcher{ast_matchers::cxxRecordDecl(ast_matchers::hasName(class_name)).bind("class")};
 
-    const SourceManager& get_source_manager() const
+        return ast_fixture.get_first_match<CXXRecordDecl>(matcher);
+    };
+
+    const clang::SourceManager& get_source_manager() const
     {
-        return ast_unit->getSourceManager();
+        return ast_fixture.get_source_manager();
     }
 
   private:
-    std::unique_ptr<ASTUnit> ast_unit;
-    const CXXRecordDecl* iface_node{nullptr};
+    Tsepepe::ClangSingleAstFixture ast_fixture;
+    std::string class_name;
 };
-
 }; // namespace PureVirtualFunctionsExtractorTest
 
 TEST_CASE("Extracts pure virtual functions from abstract class and converts them to overriding declarations",
@@ -97,9 +88,9 @@ TEST_CASE("Extracts pure virtual functions from abstract class and converts them
 
             WHEN("Override declarations are extracted")
             {
-                ClangSingleAstFixture fixture{"Interface", iface_def};
-                auto result{pure_virtual_functions_to_override_declarations(fixture.get_iface_node(),
-                                                                            fixture.get_source_manager())};
+                ClangAstClassRetrieverFixture fixture{iface_def, "Interface"};
+                auto result{
+                    pure_virtual_functions_to_override_declarations(fixture.retrieve(), fixture.get_source_manager())};
 
                 THEN("The proper result is obtained")
                 {
