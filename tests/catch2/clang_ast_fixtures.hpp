@@ -59,6 +59,11 @@ struct ClangSingleAstFixture
         return ast_unit->getSourceManager();
     }
 
+    const clang::ASTUnit& get_ast_unit() const
+    {
+        return *ast_unit;
+    }
+
   private:
     std::string header_file_content;
     std::unique_ptr<clang::ASTUnit> ast_unit;
