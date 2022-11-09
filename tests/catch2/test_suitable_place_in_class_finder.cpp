@@ -13,7 +13,6 @@
 #include <clang/ASTMatchers/ASTMatchers.h>
 #include <clang/Tooling/Tooling.h>
 
-#include "directory_tree.hpp"
 #include "libclang_utils/suitable_place_in_class_finder.hpp"
 
 using namespace Tsepepe;
@@ -154,9 +153,6 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
     auto [description, header_file_content, class_name, expected_result] = GENERATE(values(test_data));
     INFO(description);
 
-    DirectoryTree dir_tree{"temp"};
-    auto path{dir_tree.create_file("header.hpp", header_file_content)};
-
     using namespace clang;
     auto class_matcher{ast_matchers::cxxRecordDecl(ast_matchers::hasName(class_name)).bind("class")};
     auto ast_unit{tooling::buildASTFromCode(header_file_content, "header.hpp")};
@@ -169,6 +165,7 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
 
     REQUIRE(node != nullptr);
 
-    auto result{find_suitable_place_in_class_for_public_method(path, node, ast_unit->getSourceManager())};
+    auto result{
+        find_suitable_place_in_class_for_public_method(header_file_content, node, ast_unit->getSourceManager())};
     REQUIRE(result == expected_result);
 }

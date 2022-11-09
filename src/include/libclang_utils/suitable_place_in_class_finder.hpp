@@ -5,7 +5,7 @@
 #ifndef FINDER_HPP
 #define FINDER_HPP
 
-#include <filesystem>
+#include <string>
 
 #include <clang/AST/DeclCXX.h>
 #include <clang/Basic/SourceManager.h>
@@ -21,7 +21,7 @@ struct SuitablePublicMethodPlaceInCppFile
     auto operator<=>(const SuitablePublicMethodPlaceInCppFile&) const = default;
 };
 
-SuitablePublicMethodPlaceInCppFile find_suitable_place_in_class_for_public_method(std::filesystem::path cpp_file,
+SuitablePublicMethodPlaceInCppFile find_suitable_place_in_class_for_public_method(const std::string& cpp_file_content,
                                                                                   const clang::CXXRecordDecl*,
                                                                                   const clang::SourceManager&);
 

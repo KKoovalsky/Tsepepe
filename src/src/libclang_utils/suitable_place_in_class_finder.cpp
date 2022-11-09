@@ -16,28 +16,27 @@
 
 using namespace clang;
 
-namespace fs = std::filesystem;
-
 // --------------------------------------------------------------------------------------------------------------------
 // Private declaration
 // --------------------------------------------------------------------------------------------------------------------
 static const CXXMethodDecl* find_last_public_method_in_first_public_chain(const CXXRecordDecl*);
 static std::optional<unsigned>
-try_find_line_with_public_section(const fs::path& header_file, const CXXRecordDecl*, const SourceManager&);
+try_find_line_with_public_section(const std::string& cpp_file_content, const CXXRecordDecl*, const SourceManager&);
 static unsigned find_line_with_opening_bracket(const CXXRecordDecl*, const SourceManager&);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
 Tsepepe::SuitablePublicMethodPlaceInCppFile Tsepepe::find_suitable_place_in_class_for_public_method(
-    std::filesystem::path cpp_file, const clang::CXXRecordDecl* node, const clang::SourceManager& source_manager)
+    const std::string& cpp_file_content, const clang::CXXRecordDecl* node, const clang::SourceManager& source_manager)
 {
     auto last_public_method_in_first_public_method_chain{find_last_public_method_in_first_public_chain(node)};
     if (last_public_method_in_first_public_method_chain != nullptr)
     {
         auto end_source_loc{last_public_method_in_first_public_method_chain->getEndLoc()};
         return {.line = source_manager.getPresumedLoc(end_source_loc).getLine()};
-    } else if (auto maybe_first_public_section{try_find_line_with_public_section(cpp_file, node, source_manager)};
+    } else if (auto maybe_first_public_section{
+                   try_find_line_with_public_section(cpp_file_content, node, source_manager)};
                maybe_first_public_section)
     {
         return {.line = *maybe_first_public_section};
@@ -83,7 +82,7 @@ static const CXXMethodDecl* find_last_public_method_in_first_public_chain(const 
     return *last_public_method_in_first_public_method_chain_it;
 }
 
-static std::optional<unsigned> try_find_line_with_public_section(const fs::path& header_file,
+static std::optional<unsigned> try_find_line_with_public_section(const std::string& cpp_file_content,
                                                                  const CXXRecordDecl* record,
                                                                  const SourceManager& source_manager)
 {
@@ -99,17 +98,21 @@ static std::optional<unsigned> try_find_line_with_public_section(const fs::path&
     }};
 
     auto get_line_nums_with_public_access_specifier_declarations{[&]() -> std::vector<unsigned> {
-        std::string command{"rg --line-number \"public\\s*:\" " + header_file.string()};
+        std::string command{"rg --line-number \"public\\s*:\" -"};
 
         using namespace boost::process;
-        ipstream pipe_stream;
-        child c{std::move(command), std_out > pipe_stream};
-        std::string line;
+        ipstream instream;
+        opstream outstream;
+        child c{std::move(command), std_out > instream, std_in < outstream};
+
+        outstream << cpp_file_content;
+        outstream.close();
+        outstream.pipe().close();
 
         std::vector<unsigned> result;
         result.reserve(16);
-
-        while (pipe_stream && std::getline(pipe_stream, line) && !line.empty())
+        std::string line;
+        while (instream && std::getline(instream, line) && !line.empty())
         {
             auto colon_idx{line.find(':')};
             if (colon_idx == std::string::npos)
