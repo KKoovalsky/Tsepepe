@@ -6,6 +6,7 @@ add_executable(tsepepe_lib_unit_test
     test_suitable_place_in_class_finder.cpp
     test_pure_virtual_functions_extractor.cpp
     test_full_function_declaration_expander.cpp
+    test_include_resolver.hpp
 )
 
 target_link_libraries(tsepepe_lib_unit_test Catch2::Catch2WithMain tsepepe_lib)
