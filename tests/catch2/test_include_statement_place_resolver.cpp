@@ -1,11 +1,11 @@
 /**
- * @file        test_include_resolver.cpp
+ * @file        test_include_statement_place_resolver.cpp
  * @brief       Tests the include resolver.
  */
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
-#include "libclang_utils/include_resolver.hpp"
+#include "libclang_utils/include_statement_place_resolver.hpp"
 
 #include "clang_ast_fixtures.hpp"
 
@@ -13,7 +13,7 @@ using namespace Tsepepe;
 
 namespace fs = std::filesystem;
 
-namespace IncludeResolverTest
+namespace IncludeStatementPlaceResolverTest
 {
 struct TestData
 {
@@ -22,11 +22,11 @@ struct TestData
     std::string header_file_content;
     unsigned expected_result;
 };
-}; // namespace IncludeResolverTest
+}; // namespace IncludeStatementPlaceResolverTest
 
-TEST_CASE("A new include place is resolved", "[IncludeResolver]")
+TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
 {
-    using namespace IncludeResolverTest;
+    using namespace IncludeStatementPlaceResolverTest;
     auto [description, path_to_include, header_file_content, expected_result] = GENERATE(values({
         TestData{.description = "Resolves to the top of the file if no include is found",
                  .path_to_include = "/some/path/to/header.hpp",
@@ -43,7 +43,7 @@ TEST_CASE("A new include place is resolved", "[IncludeResolver]")
 
     INFO(description);
     ClangSingleAstFixture fixture{header_file_content};
-    auto result{resolve_local_include(path_to_include, header_file_content, fixture.get_ast_unit())};
+    auto result{resolve_include_statement_place(path_to_include, header_file_content, fixture.get_ast_unit())};
     REQUIRE(result == expected_result);
 
     // SECTION("Resolves to the top of the file if no include is found")
