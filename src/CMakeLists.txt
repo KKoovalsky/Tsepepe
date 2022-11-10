@@ -16,6 +16,7 @@ add_subdirectory(full_class_name_expander)
 add_library(tsepepe_lib STATIC
     src/implement_interface_code_action.cpp
     src/codebase_grepper.cpp
+    src/file_grepper.cpp
     src/directory_tree.cpp
     src/libclang_utils/suitable_place_in_class_finder.cpp
     src/libclang_utils/pure_virtual_functions_extractor.cpp

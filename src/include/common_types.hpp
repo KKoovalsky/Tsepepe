@@ -12,7 +12,8 @@
 namespace Tsepepe
 {
 
-using EcmaScriptPattern = fluent::NamedType<std::string, struct PatternTag>;
+using RustRegexPattern = fluent::NamedType<std::string, struct RustRegexPatternTag>;
+using EcmaScriptPattern = fluent::NamedType<std::string, struct EcmaScriptPatternTag>;
 using RootDirectory = fluent::NamedType<std::filesystem::path, struct RootDirectoryTag>;
 
 } // namespace Tsepepe
