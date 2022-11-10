@@ -15,7 +15,12 @@ namespace Tsepepe
 using Line = unsigned;
 using FileGrepMatches = std::vector<Line>;
 
-FileGrepMatches grep_file(const std::string& file_content, RustRegexPattern);
+struct GrepOptions
+{
+    unsigned enable_multiline_regex : 1 {0};
+};
+
+FileGrepMatches grep_file(const std::string& file_content, RustRegexPattern, GrepOptions options = {});
 
 } // namespace Tsepepe
 

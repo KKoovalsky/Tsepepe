@@ -17,9 +17,13 @@
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-Tsepepe::FileGrepMatches Tsepepe::grep_file(const std::string& file_content, RustRegexPattern pattern)
+Tsepepe::FileGrepMatches
+Tsepepe::grep_file(const std::string& file_content, RustRegexPattern pattern, GrepOptions options)
 {
-    std::string command{"rg " + pattern.get() + " --line-number -"};
+    std::string command{"rg " + pattern.get() + " --line-number"};
+    if (options.enable_multiline_regex)
+        command.append(" --multiline");
+    command.append(" -");
 
     using namespace boost::process;
 
