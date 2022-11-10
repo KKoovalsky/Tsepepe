@@ -10,8 +10,8 @@
 #include <utility>
 #include <vector>
 
-#include <boost/process.hpp>
-
+#include "common_types.hpp"
+#include "file_grepper.hpp"
 #include "libclang_utils/suitable_place_in_class_finder.hpp"
 
 using namespace clang;
@@ -98,31 +98,7 @@ static std::optional<unsigned> try_find_line_with_public_section(const std::stri
     }};
 
     auto get_line_nums_with_public_access_specifier_declarations{[&]() -> std::vector<unsigned> {
-        std::string command{"rg --line-number \"public\\s*:\" -"};
-
-        using namespace boost::process;
-        ipstream instream;
-        opstream outstream;
-        child c{std::move(command), std_out > instream, std_in < outstream};
-
-        outstream << cpp_file_content;
-        outstream.close();
-        outstream.pipe().close();
-
-        std::vector<unsigned> result;
-        result.reserve(16);
-        std::string line;
-        while (instream && std::getline(instream, line) && !line.empty())
-        {
-            auto colon_idx{line.find(':')};
-            if (colon_idx == std::string::npos)
-                continue;
-            auto line_number_str{line.substr(0, colon_idx)};
-            result.emplace_back(std::stoul(line_number_str));
-        }
-        c.wait();
-
-        return result;
+        return Tsepepe::grep_file(cpp_file_content, Tsepepe::RustRegexPattern{"public\\s*:"});
     }};
 
     auto class_body_line_range{get_class_body_begin_end_lines()};
