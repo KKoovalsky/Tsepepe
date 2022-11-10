@@ -18,11 +18,11 @@ add_library(tsepepe_lib STATIC
     src/codebase_grepper.cpp
     src/file_grepper.cpp
     src/directory_tree.cpp
+    src/include_statement_place_resolver.cpp
     src/libclang_utils/suitable_place_in_class_finder.cpp
     src/libclang_utils/pure_virtual_functions_extractor.cpp
     src/libclang_utils/full_function_declaration_expander.cpp
     src/libclang_utils/misc_utils.cpp
-    src/libclang_utils/include_statement_place_resolver.cpp
 )
 target_include_directories(tsepepe_lib PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 target_link_libraries(tsepepe_lib PUBLIC NamedType)
