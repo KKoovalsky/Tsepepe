@@ -22,6 +22,7 @@ struct GrepMatch
     auto operator<=>(const GrepMatch&) const = default;
 };
 
+// FIXME: actually RustRegexPattern is used here!
 std::vector<GrepMatch> codebase_grep(RootDirectory, EcmaScriptPattern);
 
 } // namespace Tsepepe
