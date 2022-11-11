@@ -41,7 +41,7 @@ struct ScopeRemover
 /** @brief Splits the fully qualified name into multiple scopes, and applies replacement for each of them.
  *
  *  Performs similar thing to the ScopeRemover, but applies replacement for each nested scope. Effectively, having a
- *  fully qualified name like: "Namespace::Scope1::Scope2", will run the ScopeRemover with three times, for three
+ *  fully qualified name like: "Namespace::Scope1::Scope2", will run the ScopeRemover three times, for three
  *  different names:
  *
  *      - "Namespace::Scope1::Scope2::"

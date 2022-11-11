@@ -19,8 +19,8 @@ using RootDirectory = fluent::NamedType<std::filesystem::path, struct RootDirect
 struct CodeInsertion
 {
     std::string code;
-    unsigned line;
-    unsigned column;
+    unsigned line{0};
+    unsigned column{0};
 
     auto operator<=>(const CodeInsertion&) const = default;
 };
