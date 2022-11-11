@@ -19,6 +19,7 @@ add_library(tsepepe_lib STATIC
     src/file_grepper.cpp
     src/directory_tree.cpp
     src/include_statement_place_resolver.cpp
+    src/scope_remover.cpp
     src/libclang_utils/misc_utils.cpp
     src/libclang_utils/suitable_place_in_class_finder.cpp
     src/libclang_utils/pure_virtual_functions_extractor.cpp
