@@ -35,9 +35,10 @@ using OverrideDeclarations = std::vector<std::string>;
  * @param implementor_fully_qualified_name Fully qualified name of the implementor. See above for explanation.
  * @returns The override declarations, ready to put straight into the implementor class, line by line.
  */
-OverrideDeclarations pure_virtual_functions_to_override_declarations(const clang::CXXRecordDecl* interface_node,
-                                                                     std::string implementor_fully_qualified_name,
-                                                                     const clang::SourceManager&);
+OverrideDeclarations pure_virtual_functions_to_override_declarations(
+    const clang::CXXRecordDecl* interface_node,
+    std::string implementor_fully_qualified_name, // FIXME: use FullyQualifiedName type
+    const clang::SourceManager&);
 
 } // namespace Tsepepe
 
