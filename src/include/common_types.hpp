@@ -16,6 +16,15 @@ using RustRegexPattern = fluent::NamedType<std::string, struct RustRegexPatternT
 using EcmaScriptPattern = fluent::NamedType<std::string, struct EcmaScriptPatternTag>;
 using RootDirectory = fluent::NamedType<std::filesystem::path, struct RootDirectoryTag>;
 
+struct CodeInsertion
+{
+    std::string code;
+    unsigned line;
+    unsigned column;
+
+    auto operator<=>(const CodeInsertion&) const = default;
+};
+
 } // namespace Tsepepe
 
 #endif /* COMMON_TYPES_HPP */

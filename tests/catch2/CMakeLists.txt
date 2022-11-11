@@ -7,6 +7,7 @@ add_executable(tsepepe_lib_unit_test
     test_pure_virtual_functions_extractor.cpp
     test_full_function_declaration_expander.cpp
     test_include_statement_place_resolver.cpp
+    test_base_specifier_resolver.cpp
 )
 
 target_link_libraries(tsepepe_lib_unit_test Catch2::Catch2WithMain tsepepe_lib)
