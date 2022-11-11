@@ -42,7 +42,7 @@ CodeInsertion Tsepepe::resolve_base_specifier(const std::string& cpp_file_conten
         code.append("public ");
 
     code.append(base_class->getQualifiedNameAsString());
-    code = AllScopeRemover{FullyQualifiedName{deriving_class->getQualifiedNameAsString()}}.remove(code);
+    code = AllScopeRemover{FullyQualifiedName{deriving_class->getQualifiedNameAsString()}}.remove_from(code);
 
     auto placement_raw{get_end_of_token_before_opening_bracket(deriving_class, source_manager)};
     auto placement{source_manager.getPresumedLoc(placement_raw)};

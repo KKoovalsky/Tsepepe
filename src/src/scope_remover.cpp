@@ -13,7 +13,7 @@ Tsepepe::ScopeRemover::ScopeRemover(FullyQualifiedName name_alias) : fully_quali
         fully_qualified_name.append("::");
 }
 
-std::string Tsepepe::ScopeRemover::remove(const std::string& cpp_code)
+std::string Tsepepe::ScopeRemover::remove_from(const std::string& cpp_code)
 {
     return std::regex_replace(cpp_code, std::regex{fully_qualified_name}, "");
 }
@@ -23,10 +23,10 @@ Tsepepe::AllScopeRemover::AllScopeRemover(FullyQualifiedName name_alias) :
 {
 }
 
-std::string Tsepepe::AllScopeRemover::remove(std::string cpp_code)
+std::string Tsepepe::AllScopeRemover::remove_from(std::string cpp_code)
 {
     for (const auto& scope : nesting_scopes)
-        cpp_code = ScopeRemover{FullyQualifiedName{scope}}.remove(cpp_code);
+        cpp_code = ScopeRemover{FullyQualifiedName{scope}}.remove_from(cpp_code);
     return cpp_code;
 }
 

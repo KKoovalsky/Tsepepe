@@ -32,7 +32,7 @@ using FullyQualifiedName = fluent::NamedType<std::string, struct FullyQualifiedN
 struct ScopeRemover
 {
     explicit ScopeRemover(FullyQualifiedName);
-    std::string remove(const std::string& cpp_code);
+    std::string remove_from(const std::string& cpp_code);
 
   private:
     std::string fully_qualified_name;
@@ -61,7 +61,7 @@ struct ScopeRemover
 struct AllScopeRemover
 {
     explicit AllScopeRemover(FullyQualifiedName);
-    std::string remove(std::string cpp_code);
+    std::string remove_from(std::string cpp_code);
 
   private:
     /**
