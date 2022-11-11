@@ -10,9 +10,15 @@
 namespace Tsepepe
 {
 
-using Line = unsigned;
+struct IncludeStatementPlace
+{
+    unsigned line;
+    bool is_newline_needed{false};
 
-Line resolve_include_statement_place(const std::string& cpp_file_content);
+    constexpr auto operator<=>(const IncludeStatementPlace&) const = default;
+};
+
+IncludeStatementPlace resolve_include_statement_place(const std::string& cpp_file_content);
 
 } // namespace Tsepepe
 

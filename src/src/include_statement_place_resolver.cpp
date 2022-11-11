@@ -31,29 +31,35 @@ static std::optional<unsigned> find_line_with_last_global_include_statement(cons
  */
 static std::optional<unsigned> find_line_with_include_guard_heading_end(const std::string& cpp_file_content);
 static std::optional<unsigned> find_line_with_pragma_once_statement(const std::string& cpp_file_content);
-static unsigned get_last_line_of_header_comment(const std::string& cpp_file_content);
+static std::optional<unsigned> find_last_line_of_header_comment(const std::string& cpp_file_content);
 
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-Tsepepe::Line Tsepepe::resolve_include_statement_place(const std::string& cpp_file_content)
+Tsepepe::IncludeStatementPlace Tsepepe::resolve_include_statement_place(const std::string& cpp_file_content)
 {
     if (auto maybe_last_local_include_line{find_line_with_last_local_include_statement(cpp_file_content)};
         maybe_last_local_include_line)
-        return *maybe_last_local_include_line;
+        return {.line = *maybe_last_local_include_line};
 
     if (auto maybe_last_global_include_line{find_line_with_last_global_include_statement(cpp_file_content)};
         maybe_last_global_include_line)
-        return *maybe_last_global_include_line;
+        return {.line = *maybe_last_global_include_line, .is_newline_needed = true};
 
     if (auto maybe_include_guard_line{find_line_with_include_guard_heading_end(cpp_file_content)};
         maybe_include_guard_line)
-        return *maybe_include_guard_line;
+        return {.line = *maybe_include_guard_line, .is_newline_needed = true};
 
     if (auto maybe_pragma_once_line{find_line_with_pragma_once_statement(cpp_file_content)}; maybe_pragma_once_line)
-        return *maybe_pragma_once_line;
+        return {.line = *maybe_pragma_once_line, .is_newline_needed = true};
 
-    return get_last_line_of_header_comment(cpp_file_content);
+    if (auto maybe_last_line_of_header_comment{find_last_line_of_header_comment(cpp_file_content)};
+        maybe_last_line_of_header_comment)
+        return {.line = *maybe_last_line_of_header_comment, .is_newline_needed = true};
+
+    // When no '#include' statement found, nor the comment header, or include guard, then the place is at the top of the
+    // file.
+    return {.line = 1};
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -92,7 +98,7 @@ static std::optional<unsigned> find_line_with_pragma_once_statement(const std::s
     return {};
 }
 
-static unsigned get_last_line_of_header_comment(const std::string& cpp_file_content)
+static std::optional<unsigned> find_last_line_of_header_comment(const std::string& cpp_file_content)
 {
     auto get_line_under_iterator{[](const std::string& s, std::string::const_iterator sought_it) {
         auto end{std::end(s)};
@@ -110,14 +116,15 @@ static unsigned get_last_line_of_header_comment(const std::string& cpp_file_cont
     std::smatch match;
     auto is_match_found{std::regex_search(cpp_file_content, match, re)};
     if (not is_match_found)
-        return 1;
+        return {};
 
     // Is at the beginning of the file?
     if (match.position() == 0)
     {
         auto end{match[0].second};
         return get_line_under_iterator(cpp_file_content, --end);
+    } else
+    {
+        return {};
     }
-
-    return 1;
 }

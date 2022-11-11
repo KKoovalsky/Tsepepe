@@ -17,7 +17,7 @@ struct TestData
 {
     std::string description;
     std::string header_file_content;
-    unsigned expected_result;
+    IncludeStatementPlace expected_result;
 };
 }; // namespace IncludeStatementPlaceResolverTest
 
@@ -28,13 +28,13 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
     auto [description, header_file_content, expected_result] = GENERATE(values({
         TestData{.description = "Resolves to the top of the file if no include is found",
                  .header_file_content = "",
-                 .expected_result = 1},
+                 .expected_result = {.line = 1, .is_newline_needed = false}},
         TestData{.description = "Resolves the top of the file, just below the comment header, if no include is found",
                  .header_file_content = "/**\n"
                                         " * @file	test_include_resolver.hpp\n"
                                         " * @brief	Yolo description.\n"
                                         " */\n",
-                 .expected_result = 4},
+                 .expected_result = {.line = 4, .is_newline_needed = true}},
         TestData{.description = "Resolves just below a larger comment header, if no include is found",
                  .header_file_content = "/**\n"
                                         " * @file	test_include_resolver.hpp\n"
@@ -47,7 +47,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                         "struct SomeStruct {\n"
                                         "\n"
                                         "};",
-                 .expected_result = 8},
+                 .expected_result = {.line = 8, .is_newline_needed = true}},
         TestData{.description = "Resolves within the include guards, if no include statement is found",
                  .header_file_content = "#ifndef TEST_INCLUDE_STATEMENT_PLACE_RESOLVER_CPP\n"
                                         "#define TEST_INCLUDE_STATEMENT_PLACE_RESOLVER_CPP\n"
@@ -55,7 +55,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                         "\n"
                                         "\n"
                                         "#endif /* TEST_INCLUDE_STATEMENT_PLACE_RESOLVER_CPP */\n",
-                 .expected_result = 2},
+                 .expected_result = {.line = 2, .is_newline_needed = true}},
         TestData{.description =
                      "Resolves within the include guards, below comment header, if no include statement is found",
                  .header_file_content = "/**\n"
@@ -68,7 +68,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                         "\n"
                                         "\n"
                                         "#endif /* TASTA */\n",
-                 .expected_result = 6},
+                 .expected_result = {.line = 6, .is_newline_needed = true}},
         TestData{.description = "Resolves to the line with 'pragma once' statement, if no include statement is found",
                  .header_file_content = "/**\n"
                                         " * @file	test_include_statement_place_resolver.cpp\n"
@@ -77,7 +77,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                         "#pragma once\n"
                                         "\n"
                                         "struct Struct {};\n",
-                 .expected_result = 5},
+                 .expected_result = {.line = 5, .is_newline_needed = true}},
         TestData{.description = "Resolves to the line with the last \"...\" include, for a bare file",
                  .header_file_content = "\n"
                                         "\n"
@@ -86,7 +86,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                         "\n"
                                         "#include \"temp/dang.hpp\"\n"
                                         "\n",
-                 .expected_result = 6},
+                 .expected_result = {.line = 6, .is_newline_needed = false}},
         TestData{.description =
                      "Resolves to the line with the last \"...\" include, for a 'proper' header file content",
                  .header_file_content = "/**\n"
@@ -104,7 +104,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                         "};\n"
                                         "\n"
                                         "#endif /* MASTAA */\n",
-                 .expected_result = 9},
+                 .expected_result = {.line = 9, .is_newline_needed = false}},
         TestData{
             .description =
                 "Resolves to the line with the last <...> include, if no \"...\" include is found, for a bare file",
@@ -114,7 +114,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                    "#include <utility>\n"
                                    "\n"
                                    "\n",
-            .expected_result = 4},
+            .expected_result = {.line = 4, .is_newline_needed = true}},
         TestData{.description = "Resolves to the line with the last <...> include, for a 'proper' header file content",
                  .header_file_content = "/**\n"
                                         " * @file        test_include_statement_place_resolver.cpp\n"
@@ -131,7 +131,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                         "};\n"
                                         "\n"
                                         "#endif /* MASTAA */\n",
-                 .expected_result = 9},
+                 .expected_result = {.line = 9, .is_newline_needed = true}},
         TestData{.description = "Resolves to the line with the last \"...\", when both include types exist",
                  .header_file_content = "/**\n"
                                         " * @file        test_include_statement_place_resolver.cpp\n"
@@ -154,7 +154,7 @@ TEST_CASE("A new include place is resolved", "[IncludeStatementPlaceResolver]")
                                         "};\n"
                                         "\n"
                                         "#endif /* MASTAA */\n",
-                 .expected_result = 15},
+                 .expected_result = {.line = 15, .is_newline_needed = false}},
     }));
 
     INFO(description);
