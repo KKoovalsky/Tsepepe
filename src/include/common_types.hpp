@@ -25,6 +25,14 @@ struct CodeInsertion
     auto operator<=>(const CodeInsertion&) const = default;
 };
 
+struct CodeInsertionByOffset
+{
+    std::string code;
+    unsigned offset;
+
+    auto operator<=>(const CodeInsertionByOffset&) const = default;
+};
+
 } // namespace Tsepepe
 
 #endif /* COMMON_TYPES_HPP */
