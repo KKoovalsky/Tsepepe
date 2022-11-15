@@ -22,10 +22,10 @@ static bool is_already_deriving(const CXXRecordDecl* potentially_deriving_class,
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
-CodeInsertion Tsepepe::resolve_base_specifier(const std::string& cpp_file_content,
-                                              const clang::CXXRecordDecl* deriving_class,
-                                              const clang::CXXRecordDecl* base_class,
-                                              const clang::SourceManager& source_manager)
+CodeInsertionByOffset Tsepepe::resolve_base_specifier(const std::string& cpp_file_content,
+                                                      const clang::CXXRecordDecl* deriving_class,
+                                                      const clang::CXXRecordDecl* base_class,
+                                                      const clang::SourceManager& source_manager)
 {
     if (is_already_deriving(deriving_class, base_class))
         return {};
@@ -44,10 +44,10 @@ CodeInsertion Tsepepe::resolve_base_specifier(const std::string& cpp_file_conten
     code.append(base_class->getQualifiedNameAsString());
     code = AllScopeRemover{FullyQualifiedName{deriving_class->getQualifiedNameAsString()}}.remove_from(code);
 
-    auto placement_raw{get_end_of_token_before_opening_bracket(deriving_class, source_manager)};
-    auto placement{source_manager.getPresumedLoc(placement_raw)};
+    auto placement{get_end_of_token_before_opening_bracket(deriving_class, source_manager)};
+    auto offset{source_manager.getFileOffset(placement)};
 
-    return {.code = std::move(code), .line = placement.getLine(), .column = placement.getColumn()};
+    return {.code = std::move(code), .offset = offset};
 }
 
 // --------------------------------------------------------------------------------------------------------------------

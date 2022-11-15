@@ -18,6 +18,11 @@ inline std::ostream& operator<<(std::ostream& os, const Tsepepe::CodeInsertion& 
               << ", column: " << code_insertion.column;
 }
 
+inline std::ostream& operator<<(std::ostream& os, const Tsepepe::CodeInsertionByOffset& code_insertion)
+{
+    return os << "Code: \"" << code_insertion.code << "\", offset: " << code_insertion.offset;
+}
+
 } // namespace Tsepepe
 
 #endif /* OSTREAM_PRINTERS_HPP */

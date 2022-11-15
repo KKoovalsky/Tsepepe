@@ -13,10 +13,10 @@
 namespace Tsepepe
 {
 
-CodeInsertion resolve_base_specifier(const std::string& cpp_file_content,
-                                     const clang::CXXRecordDecl* deriving_class,
-                                     const clang::CXXRecordDecl* base_class,
-                                     const clang::SourceManager&);
+CodeInsertionByOffset resolve_base_specifier(const std::string& cpp_file_content,
+                                             const clang::CXXRecordDecl* deriving_class,
+                                             const clang::CXXRecordDecl* base_class,
+                                             const clang::SourceManager&);
 }
 
 #endif /* BASE_SPECIFIER_RESOLVER_HPP */
