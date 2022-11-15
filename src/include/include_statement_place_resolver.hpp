@@ -12,7 +12,7 @@ namespace Tsepepe
 
 struct IncludeStatementPlace
 {
-    unsigned line;
+    unsigned offset;
     bool is_newline_needed{false};
 
     constexpr auto operator<=>(const IncludeStatementPlace&) const = default;

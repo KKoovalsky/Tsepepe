@@ -8,6 +8,7 @@
 #include <clang/Lex/Lexer.h>
 
 #include "base_error.hpp"
+#include "common_types.hpp"
 #include "scope_remover.hpp"
 
 using namespace clang;
