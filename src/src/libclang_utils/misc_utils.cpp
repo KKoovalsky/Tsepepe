@@ -59,3 +59,10 @@ std::string Tsepepe::source_range_content_to_string(const clang::SourceRange& so
     strip(result);
     return result;
 }
+
+void Tsepepe::dump_token(const clang::Token& token)
+{
+    auto literal_data{token.getLiteralData()};
+    std::string literal_data_value{literal_data == nullptr ? "<EMTPY>" : std::string(literal_data, token.getLength())};
+    std::cout << "Tsepepe Clang::token: " << token.getName() << ", literal data: " << literal_data_value << std::endl;
+}
