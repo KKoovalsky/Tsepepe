@@ -15,7 +15,7 @@ namespace Tsepepe
 
 struct SuitablePublicMethodPlaceInCppFile
 {
-    unsigned line;
+    unsigned offset;
     bool is_public_section_needed{false};
 
     auto operator<=>(const SuitablePublicMethodPlaceInCppFile&) const = default;

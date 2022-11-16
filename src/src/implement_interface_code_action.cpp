@@ -23,6 +23,7 @@
 #include "libclang_utils/presumed_source_range.hpp"
 #include "libclang_utils/pure_virtual_functions_extractor.hpp"
 #include "libclang_utils/suitable_place_in_class_finder.hpp"
+#include "clang/Basic/SourceLocation.h"
 
 using namespace clang;
 using namespace clang::tooling;
@@ -75,6 +76,11 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_r
         interface_declaration, implementor_full_name, source_manager)};
     auto method_overrides_place{
         Tsepepe::find_suitable_place_in_class_for_public_method(file_content, implementor_declaration, source_manager)};
+    
+    // auto file_id{source_manager.getPresumedLoc(implementor_declaration->getLocation()).getFileID()};
+    // auto method_overrides_location{source_manager.getComposedLoc(file_id, method_overrides_place.line
+    // source_manager.getSLocEntry
+
 
     return {};
 }
