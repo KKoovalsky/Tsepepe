@@ -62,10 +62,6 @@ std::string Tsepepe::source_range_content_to_string(const clang::SourceRange& so
 
 void Tsepepe::dump_token(const clang::Token& token)
 {
-    // token.isAnnotation()
-    // std::string literal_data_value{"<EMPTY>"};
-    // if(token.isLiteral() and token.getLiteralData() != nullptr)
-    //     literal_data_value = std::string(token.getLiteralData(), token.getLength());
     std::cout << "Tsepepe Clang::token: " << token.getName();
     if (token.isLiteral())
     {
