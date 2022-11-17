@@ -14,134 +14,19 @@
 #include <utility>
 #include <vector>
 
-#include <clang/Basic/TokenKinds.h>
-#include <clang/Lex/Lexer.h>
-
 #include "base_error.hpp"
 #include "common_types.hpp"
 #include "file_grepper.hpp"
-#include "clang/Basic/SourceLocation.h"
 
 using namespace clang;
 using namespace Tsepepe;
 
+#include "libclang_utils/lexed_range.hpp"
 #include "libclang_utils/misc_utils.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 // Private declaration
 // --------------------------------------------------------------------------------------------------------------------
-
-struct TokenIteratorSentinel
-{
-};
-
-struct TokenIterator : std::forward_iterator_tag
-{
-    explicit TokenIterator(SourceLocation location,
-                           const SourceManager* source_manager,
-                           const LangOptions* lang_options) :
-        source_manager{source_manager}, lang_options{lang_options}
-    {
-        Token token;
-        if (Lexer::getRawToken(location, token, *source_manager, *lang_options))
-            throw Tsepepe::BaseError{
-                "Couldn't create raw token for the location, while constructing the token iterator"};
-        current_token = token;
-    }
-
-    TokenIterator() = default;
-    TokenIterator(const TokenIterator&) = default;
-    TokenIterator& operator=(const TokenIterator&) = default;
-    TokenIterator(TokenIterator&&) = default;
-    TokenIterator& operator=(TokenIterator&&) = default;
-
-    using iterator_category = std::forward_iterator_tag;
-    using difference_type = int;
-    using value_type = Token;
-    using pointer = const value_type*;
-    using reference = const value_type&;
-
-    reference operator*() const
-    {
-        if (not current_token.hasValue())
-            throw Tsepepe::BaseError{"Dereferencing invalid token!"};
-        return *current_token;
-    }
-
-    pointer operator->()
-    {
-        return &this->operator*();
-    }
-
-    //! Prefix increment
-    TokenIterator& operator++()
-    {
-        if (not current_token.hasValue())
-            return *this;
-        current_token = Lexer::findNextToken(current_token->getLocation(), *source_manager, *lang_options);
-        return *this;
-    }
-
-    //! Postfix increment
-    TokenIterator operator++(int)
-    {
-        TokenIterator tmp{*this};
-        ++(*this);
-        return tmp;
-    }
-
-    friend bool operator==(const TokenIterator& a, const TokenIterator& b)
-    {
-        return a.current_token->getLocation() == b.current_token->getLocation();
-    };
-
-    friend bool operator!=(const TokenIterator& a, const TokenIterator& b)
-    {
-        return not(a == b);
-    };
-
-  private:
-    Optional<Token> current_token;
-    const SourceManager* source_manager;
-    const LangOptions* lang_options;
-};
-
-static_assert(std::forward_iterator<TokenIterator>);
-
-struct LexedRange
-{
-    explicit LexedRange(SourceLocation begin,
-                        SourceLocation end,
-                        const SourceManager* source_manager,
-                        const LangOptions* lang_options) :
-        source_range{begin, end}, source_manager{source_manager}, lang_options{lang_options}
-    {
-    }
-
-    explicit LexedRange(SourceRange source_range,
-                        const SourceManager* source_manager,
-                        const LangOptions* lang_options) :
-        source_range{std::move(source_range)}, source_manager{source_manager}, lang_options{lang_options}
-    {
-    }
-
-    TokenIterator begin() const
-    {
-        return TokenIterator{source_range.getBegin(), source_manager, lang_options};
-    }
-
-    TokenIterator end() const
-    {
-        return TokenIterator{source_range.getEnd(), source_manager, lang_options};
-    }
-
-  private:
-    SourceRange source_range;
-    const SourceManager* source_manager;
-    const LangOptions* lang_options;
-};
-
-static_assert(std::ranges::forward_range<LexedRange>);
 
 struct SuitablePlaceInClassFinder
 {
@@ -252,39 +137,6 @@ struct SuitablePlaceInClassFinder
             return newline_offset + 1;
         else
             return source_manager.getFileOffset(beg->getLocation());
-        //
-        //
-        //
-        // auto first_token_after_begin_location{Lexer::findNextToken(location, source_manager,
-        // record->getLangOpts())}; auto
-        // begin_location{unpack_source_location_from_token(first_token_after_begin_location)}; auto
-        // current_location{begin_location};
-        //
-        // if (first_token_after_begin_location->is(tok::semi))
-        // {
-        //     for (unsigned i{0}; i < 1000; ++i)
-        //     {
-        //         auto tok{Lexer::findNextToken(current_location, source_manager, record->getLangOpts())};
-        //         if (not tok.hasValue())
-        //             break;
-        //         current_location = tok->getLocation();
-        //         if (tok->isNot(tok::semi))
-        //             break;
-        //     }
-        // }
-        // auto end_location{current_location};
-        //
-        // auto begin_offset{source_manager.getFileOffset(begin_location)};
-        // auto end_offset{source_manager.getFileOffset(end_location)};
-        //
-        // auto begin_it{std::next(std::begin(cpp_file_content), begin_offset)};
-        // auto end_it{std::next(std::begin(cpp_file_content), end_offset)};
-        //
-        // auto newline_place_it{std::find(begin_it, end_it, '\n')};
-        // if (newline_place_it != end_it)
-        //     return std::distance(std::begin(cpp_file_content), newline_place_it) + 1;
-        // else
-        //     return end_offset;
     }
 
     SourceLocation unpack_source_location_from_token(const Optional<Token>& token) const
@@ -309,7 +161,6 @@ struct SuitablePlaceInClassFinder
     const LangOptions& lang_options;
 };
 
-static unsigned get_insert_offset_after_location(const std::string& file_content, SourceLocation);
 static std::optional<unsigned> get_offset_past_last_public_method_in_first_public_method_chain(
     const std::string& cpp_file_content, const CXXRecordDecl* record, const SourceManager& source_manager);
 static const CXXMethodDecl* find_last_public_method_in_first_method_chain(const CXXRecordDecl*);
@@ -343,14 +194,9 @@ Tsepepe::SuitablePublicMethodPlaceInCppFile Tsepepe::find_suitable_place_in_clas
     }
 }
 
-#include "libclang_utils/misc_utils.hpp"
-
 // --------------------------------------------------------------------------------------------------------------------
 // Private implementations
 // --------------------------------------------------------------------------------------------------------------------
-static unsigned get_insert_offset_after_location(const std::string& file_content, SourceLocation location)
-{
-}
 
 static std::optional<unsigned> get_offset_past_last_public_method_in_first_public_method_chain(
     const std::string& cpp_file_content, const CXXRecordDecl* record, const SourceManager& source_manager)
@@ -361,7 +207,6 @@ static std::optional<unsigned> get_offset_past_last_public_method_in_first_publi
 
     auto end_source_loc{method->getEndLoc()};
     auto offset{source_manager.getFileOffset(end_source_loc)};
-    std::cout << "YOLO: offset: " << offset << ' ' << cpp_file_content[offset] << std::endl;
     auto newline_place{cpp_file_content.find('\n', offset)};
 
     auto current_location{end_source_loc};
@@ -373,6 +218,7 @@ static std::optional<unsigned> get_offset_past_last_public_method_in_first_publi
         Tsepepe::dump_token(*tok);
         current_location = tok->getLocation();
     }
+
     // FIXME: this is wrong! Add more test cases to check for declaration vs definiton, and match regex against
     // end of line, if not end of line then return offset past the declaration/definition! Maybe use Lexer, to
     // find a new token? Skip newlines / do not skip them? What does it mean?
