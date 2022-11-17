@@ -62,7 +62,27 @@ std::string Tsepepe::source_range_content_to_string(const clang::SourceRange& so
 
 void Tsepepe::dump_token(const clang::Token& token)
 {
-    auto literal_data{token.getLiteralData()};
-    std::string literal_data_value{literal_data == nullptr ? "<EMTPY>" : std::string(literal_data, token.getLength())};
-    std::cout << "Tsepepe Clang::token: " << token.getName() << ", literal data: " << literal_data_value << std::endl;
+    // token.isAnnotation()
+    // std::string literal_data_value{"<EMPTY>"};
+    // if(token.isLiteral() and token.getLiteralData() != nullptr)
+    //     literal_data_value = std::string(token.getLiteralData(), token.getLength());
+    std::cout << "Tsepepe Clang::token: " << token.getName();
+    if (token.isLiteral())
+    {
+        std::cout << ", literal: ";
+        if (token.getLiteralData() == nullptr)
+            std::cout << "<EMPTY>" << std::endl;
+        else
+            std::cout << std::string(token.getLiteralData(), token.getLength());
+    }
+
+    if (token.isAnnotation())
+    {
+        std::cout << ", annotation" << std::endl;
+    }
+
+    if (token.isAnyIdentifier())
+    {
+        std::cout << ", any identifier: " << token.getRawIdentifier().str() << std::endl;
+    }
 }

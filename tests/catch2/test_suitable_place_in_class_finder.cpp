@@ -50,6 +50,25 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "\n",
                                            .class_name = "Yolo",
                                            .expected_result = {.offset = 60}},
+        SuitablePlaceInClassFinderTestData{.description = "In a weirdly#2 formatted class with a single public section",
+                                           .header_file_content = "class Yolo\n"
+                                                                  "{\n"
+                                                                  "public:\n"
+                                                                  "    Yolo() = default;\n"
+                                                                  "    void gimme();;;};"
+                                                                  "\n",
+                                           .class_name = "Yolo",
+                                           .expected_result = {.offset = 60}},
+        SuitablePlaceInClassFinderTestData{.description = "In a weirdly#3 formatted class with a single public section",
+                                           .header_file_content = "class Yolo\n"
+                                                                  "{\n"
+                                                                  "public:\n"
+                                                                  "    Yolo() = default;\n"
+                                                                  "    void gimme()   \n"
+                                                                  ";;;};"
+                                                                  "\n",
+                                           .class_name = "Yolo",
+                                           .expected_result = {.offset = 64}},
         // SuitablePlaceInClassFinderTestData{
         //     .description = "In a class with private methods",
         //     .header_file_content = "class Maka\n"
@@ -59,18 +78,17 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
         //                            "    void sijek();\n"
         //                            "};\n",
         //     .class_name = "Maka",
-        //     .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2, .is_public_section_needed = true}},
-        // SuitablePlaceInClassFinderTestData{.description = "In a class with public and private section, in that
-        // order",
-        //                                    .header_file_content = "\n"
-        //                                                           "class Bumm\n"
-        //                                                           "{\n"
-        //                                                           "public:\n"
-        //                                                           "private:\n"
-        //                                                           "};\n"
-        //                                                           "\n",
-        //                                    .class_name = "Bumm",
-        //                                    .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}},
+        //     .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 12, .is_public_section_needed = true}},
+        SuitablePlaceInClassFinderTestData{.description = "In a class with public and private section, in that order",
+                                           .header_file_content = "\n"
+                                                                  "class Bumm\n"
+                                                                  "{\n"
+                                                                  "public:\n"
+                                                                  "private:\n"
+                                                                  "};\n"
+                                                                  "\n",
+                                           .class_name = "Bumm",
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 22}},
         // SuitablePlaceInClassFinderTestData{.description = "In a class with private and public section, in that
         // order",
         //                                    .header_file_content = "\n"
@@ -102,6 +120,10 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
         //                                    .header_file_content = "struct Yolo\n"
         //                                                           "{\n"
         //                                                           "};\n",
+        //                                    .class_name = "Yolo",
+        //                                    .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2}},
+        // SuitablePlaceInClassFinderTestData{.description = "In an empty inline struct",
+        //                                    .header_file_content = "struct Yolo {}",
         //                                    .class_name = "Yolo",
         //                                    .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2}},
         // SuitablePlaceInClassFinderTestData{.description = "In a struct with properties only",

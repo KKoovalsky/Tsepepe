@@ -2,32 +2,156 @@
  * @file	finder.cpp
  * @brief	Implements the core of the suitable place in class finder.
  */
-#include <clang/Lex/Lexer.h>
+
+#include "libclang_utils/suitable_place_in_class_finder.hpp"
 
 #include <algorithm>
+#include <cstring>
+#include <iterator>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <clang/Basic/TokenKinds.h>
+#include <clang/Lex/Lexer.h>
+
 #include "base_error.hpp"
 #include "common_types.hpp"
 #include "file_grepper.hpp"
-#include "libclang_utils/suitable_place_in_class_finder.hpp"
-#include "clang/Basic/TokenKinds.h"
+#include "clang/Basic/SourceLocation.h"
 
 using namespace clang;
 using namespace Tsepepe;
 
+#include "libclang_utils/misc_utils.hpp"
+
 // --------------------------------------------------------------------------------------------------------------------
 // Private declaration
 // --------------------------------------------------------------------------------------------------------------------
+
+struct TokenIteratorSentinel
+{
+};
+
+struct TokenIterator : std::forward_iterator_tag
+{
+    explicit TokenIterator(SourceLocation location,
+                           const SourceManager* source_manager,
+                           const LangOptions* lang_options) :
+        source_manager{source_manager}, lang_options{lang_options}
+    {
+        Token token;
+        if (Lexer::getRawToken(location, token, *source_manager, *lang_options))
+            throw Tsepepe::BaseError{
+                "Couldn't create raw token for the location, while constructing the token iterator"};
+        current_token = token;
+    }
+
+    TokenIterator() = default;
+    TokenIterator(const TokenIterator&) = default;
+    TokenIterator& operator=(const TokenIterator&) = default;
+    TokenIterator(TokenIterator&&) = default;
+    TokenIterator& operator=(TokenIterator&&) = default;
+
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = int;
+    using value_type = Token;
+    using pointer = const value_type*;
+    using reference = const value_type&;
+
+    reference operator*() const
+    {
+        if (not current_token.hasValue())
+            throw Tsepepe::BaseError{"Dereferencing invalid token!"};
+        return *current_token;
+    }
+
+    pointer operator->()
+    {
+        return &this->operator*();
+    }
+
+    //! Prefix increment
+    TokenIterator& operator++()
+    {
+        if (not current_token.hasValue())
+            return *this;
+        current_token = Lexer::findNextToken(current_token->getLocation(), *source_manager, *lang_options);
+        return *this;
+    }
+
+    //! Postfix increment
+    TokenIterator operator++(int)
+    {
+        TokenIterator tmp{*this};
+        ++(*this);
+        return tmp;
+    }
+
+    friend bool operator==(const TokenIterator& a, const TokenIterator& b)
+    {
+        return a.current_token->getLocation() == b.current_token->getLocation();
+    };
+
+    friend bool operator!=(const TokenIterator& a, const TokenIterator& b)
+    {
+        return not(a == b);
+    };
+
+  private:
+    Optional<Token> current_token;
+    const SourceManager* source_manager;
+    const LangOptions* lang_options;
+};
+
+static_assert(std::forward_iterator<TokenIterator>);
+
+struct LexedRange
+{
+    explicit LexedRange(SourceLocation begin,
+                        SourceLocation end,
+                        const SourceManager* source_manager,
+                        const LangOptions* lang_options) :
+        source_range{begin, end}, source_manager{source_manager}, lang_options{lang_options}
+    {
+    }
+
+    explicit LexedRange(SourceRange source_range,
+                        const SourceManager* source_manager,
+                        const LangOptions* lang_options) :
+        source_range{std::move(source_range)}, source_manager{source_manager}, lang_options{lang_options}
+    {
+    }
+
+    TokenIterator begin() const
+    {
+        return TokenIterator{source_range.getBegin(), source_manager, lang_options};
+    }
+
+    TokenIterator end() const
+    {
+        return TokenIterator{source_range.getEnd(), source_manager, lang_options};
+    }
+
+  private:
+    SourceRange source_range;
+    const SourceManager* source_manager;
+    const LangOptions* lang_options;
+};
+
+static_assert(std::ranges::forward_range<LexedRange>);
+
 struct SuitablePlaceInClassFinder
 {
     explicit SuitablePlaceInClassFinder(const std::string& cpp_file_content,
                                         const clang::CXXRecordDecl* node,
                                         const clang::SourceManager& source_manager) :
-        cpp_file_content{cpp_file_content}, record{node}, source_manager{source_manager}
+        cpp_file_content{cpp_file_content},
+        record{node},
+        source_manager{source_manager},
+        lang_options{node->getLangOpts()}
     {
     }
 
@@ -35,9 +159,13 @@ struct SuitablePlaceInClassFinder
     {
         SourceLocation result;
         bool is_public_section_needed{false};
+
         if (auto maybe_after_public_method{find_location_after_last_public_method_in_the_first_chain()};
             maybe_after_public_method)
             result = *maybe_after_public_method;
+        else if (auto maybe_within_public_section{find_first_public_access_modifier_end_location()};
+                 maybe_within_public_section)
+            result = *maybe_within_public_section;
 
         return {.offset = get_insert_offset_after_location(result),
                 .is_public_section_needed = is_public_section_needed};
@@ -71,40 +199,92 @@ struct SuitablePlaceInClassFinder
             last_public_method_in_first_public_method_chain_it = it;
         }
 
-        return last_public_method_in_first_public_method_chain_it->getEndLoc();
+        auto result{last_public_method_in_first_public_method_chain_it};
+        if (not result->isThisDeclarationADefinition())
+        {
+            LexedRange code_range{result->getEndLoc(), record->getEndLoc(), &source_manager, &record->getLangOpts()};
+            auto semi_it{std::find_if(code_range.begin(), code_range.end(), is_semicolon)};
+            return semi_it->getLocation();
+        } else
+        {
+            return result->getEndLoc();
+        }
+    }
+
+    std::optional<SourceLocation> find_first_public_access_modifier_end_location() const
+    {
+        LexedRange class_lexed_range{record->getSourceRange(), &source_manager, &record->getLangOpts()};
+        auto beg{class_lexed_range.begin()};
+        auto end{class_lexed_range.end()};
+
+        auto it{std::find_if(beg, end, [](const Token& token) {
+            return token.is(tok::raw_identifier) and token.getRawIdentifier() == "public";
+        })};
+
+        if (it == end)
+            return {};
+
+        it = std::find_if(it, end, [](const Token& token) { return token.is(tok::colon); });
+        if (it == end)
+            return {};
+
+        return it->getLocation();
     }
 
     unsigned get_insert_offset_after_location(SourceLocation location) const
     {
-        auto first_token_after_begin_location{Lexer::findNextToken(location, source_manager, record->getLangOpts())};
-        auto begin_location{unpack_source_location_from_token(first_token_after_begin_location)};
-        auto current_location{begin_location};
+        LexedRange code_range{location, record->getEndLoc(), &source_manager, &lang_options};
+        auto beg{code_range.begin()};
+        auto end{code_range.end()};
 
-        if (first_token_after_begin_location->is(tok::semi))
-        {
-            for (unsigned i{0}; i < 1000; ++i)
-            {
-                auto tok{Lexer::findNextToken(current_location, source_manager, record->getLangOpts())};
-                if (not tok.hasValue())
-                    break;
-                current_location = tok->getLocation();
-                if (tok->isNot(tok::semi))
-                    break;
-            }
-        }
-        auto end_location{current_location};
+        // Assume the 'location' points to the at-the-end location, not to the past-the-end location, thus
+        // incrementation will put us to the past-the-end location.
+        ++beg;
 
-        auto begin_offset{source_manager.getFileOffset(begin_location)};
-        auto end_offset{source_manager.getFileOffset(end_location)};
+        // Find any token which is 'not-transparent' for the parser
+        auto it{std::find_if_not(beg, end, is_semicolon)};
 
-        auto begin_it{std::next(std::begin(cpp_file_content), begin_offset)};
-        auto end_it{std::next(std::begin(cpp_file_content), end_offset)};
+        auto beg_offset{source_manager.getFileOffset(code_range.begin()->getLocation())};
+        auto offset{source_manager.getFileOffset(it->getLocation())};
+        auto newline_offset{cpp_file_content.find('\n', beg_offset)};
 
-        auto newline_place_it{std::find(begin_it, end_it, '\n')};
-        if (newline_place_it != end_it)
-            return std::distance(std::begin(cpp_file_content), newline_place_it) + 1;
+        if (newline_offset != std::string::npos and newline_offset <= offset)
+            return newline_offset + 1;
         else
-            return end_offset;
+            return source_manager.getFileOffset(beg->getLocation());
+        //
+        //
+        //
+        // auto first_token_after_begin_location{Lexer::findNextToken(location, source_manager,
+        // record->getLangOpts())}; auto
+        // begin_location{unpack_source_location_from_token(first_token_after_begin_location)}; auto
+        // current_location{begin_location};
+        //
+        // if (first_token_after_begin_location->is(tok::semi))
+        // {
+        //     for (unsigned i{0}; i < 1000; ++i)
+        //     {
+        //         auto tok{Lexer::findNextToken(current_location, source_manager, record->getLangOpts())};
+        //         if (not tok.hasValue())
+        //             break;
+        //         current_location = tok->getLocation();
+        //         if (tok->isNot(tok::semi))
+        //             break;
+        //     }
+        // }
+        // auto end_location{current_location};
+        //
+        // auto begin_offset{source_manager.getFileOffset(begin_location)};
+        // auto end_offset{source_manager.getFileOffset(end_location)};
+        //
+        // auto begin_it{std::next(std::begin(cpp_file_content), begin_offset)};
+        // auto end_it{std::next(std::begin(cpp_file_content), end_offset)};
+        //
+        // auto newline_place_it{std::find(begin_it, end_it, '\n')};
+        // if (newline_place_it != end_it)
+        //     return std::distance(std::begin(cpp_file_content), newline_place_it) + 1;
+        // else
+        //     return end_offset;
     }
 
     SourceLocation unpack_source_location_from_token(const Optional<Token>& token) const
@@ -118,9 +298,15 @@ struct SuitablePlaceInClassFinder
         return loc;
     }
 
+    static bool is_semicolon(const Token& token)
+    {
+        return token.is(tok::semi);
+    }
+
     const std::string& cpp_file_content;
-    const clang::CXXRecordDecl* record;
-    const clang::SourceManager& source_manager;
+    const CXXRecordDecl* record;
+    const SourceManager& source_manager;
+    const LangOptions& lang_options;
 };
 
 static unsigned get_insert_offset_after_location(const std::string& file_content, SourceLocation);
@@ -187,9 +373,9 @@ static std::optional<unsigned> get_offset_past_last_public_method_in_first_publi
         Tsepepe::dump_token(*tok);
         current_location = tok->getLocation();
     }
-    // FIXME: this is wrong! Add more test cases to check for declaration vs definiton, and match regex against end
-    // of line, if not end of line then return offset past the declaration/definition! Maybe use Lexer, to find a new
-    // token? Skip newlines / do not skip them? What does it mean?
+    // FIXME: this is wrong! Add more test cases to check for declaration vs definiton, and match regex against
+    // end of line, if not end of line then return offset past the declaration/definition! Maybe use Lexer, to
+    // find a new token? Skip newlines / do not skip them? What does it mean?
     if (newline_place == std::string::npos)
     {
         if (cpp_file_content[offset + 1] == ';')
@@ -219,8 +405,8 @@ static const CXXMethodDecl* find_last_public_method_in_first_method_chain(const 
     if (first_public_method_it == end)
         return nullptr;
 
-    // Ideally, we could use find_if() to find the first non-public method, and then use std::prev(), but the method
-    // range is a forward range.
+    // Ideally, we could use find_if() to find the first non-public method, and then use std::prev(), but the
+    // method range is a forward range.
     auto last_public_method_in_first_public_method_chain_it{first_public_method_it};
     for (auto it{first_public_method_it}; it != end; ++it)
     {
