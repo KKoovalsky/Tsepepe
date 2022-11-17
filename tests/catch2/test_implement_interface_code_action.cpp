@@ -69,6 +69,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
     SECTION("Implements a compound interface")
     {
     }
+
+    SECTION("Extends pretty big class")
+    {
+    }
+
     SECTION("Properly resolves types nested within the interface")
     {
     }
