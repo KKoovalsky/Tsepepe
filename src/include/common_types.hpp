@@ -16,15 +16,6 @@ using RustRegexPattern = fluent::NamedType<std::string, struct RustRegexPatternT
 using EcmaScriptPattern = fluent::NamedType<std::string, struct EcmaScriptPatternTag>;
 using RootDirectory = fluent::NamedType<std::filesystem::path, struct RootDirectoryTag>;
 
-struct CodeInsertion
-{
-    std::string code;
-    unsigned line{0};
-    unsigned column{0};
-
-    auto operator<=>(const CodeInsertion&) const = default;
-};
-
 struct CodeInsertionByOffset
 {
     std::string code;

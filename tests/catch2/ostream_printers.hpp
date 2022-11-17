@@ -15,12 +15,6 @@
 namespace Tsepepe
 {
 
-inline std::ostream& operator<<(std::ostream& os, const Tsepepe::CodeInsertion& code_insertion)
-{
-    return os << "Code: \"" << code_insertion.code << "\", line: " << code_insertion.line
-              << ", column: " << code_insertion.column;
-}
-
 inline std::ostream& operator<<(std::ostream& os, const Tsepepe::CodeInsertionByOffset& code_insertion)
 {
     return os << "Code: \"" << code_insertion.code << "\", offset: " << code_insertion.offset;
