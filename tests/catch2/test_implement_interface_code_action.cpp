@@ -54,11 +54,10 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                     {
                         REQUIRE(result == 
                                   "#include \"runnable.hpp\"\n"
-                                  "\n"
                                   "struct Maker : Runnable\n"
                                   "{\n"
                                   "    void run() override;\n"
-                                  "    int stop(unsigned timeout_ms) override;\n"
+                                  "    int stop(unsigned int timeout_ms) override;\n"
                                   "};\n"
                         );
                     }

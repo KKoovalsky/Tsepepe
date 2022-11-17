@@ -45,6 +45,15 @@ class ImplementIntefaceCodeActionLibclangBased
     bool is_include_already_in_place(const std::filesystem::path& header_path,
                                      const std::string& cpp_file_content) const;
 
+    Tsepepe::CodeInsertionByOffset
+    get_include_statement_code_insertion(const std::string& file_content,
+                                         const clang::CXXRecordDecl* interface_declaration) const;
+
+    Tsepepe::CodeInsertionByOffset
+    get_overrides_code_insertion(const std::string& file_content,
+                                 const clang::CXXRecordDecl* implementor_declaration,
+                                 const clang::CXXRecordDecl* interface_declaration) const;
+
     std::shared_ptr<clang::tooling::CompilationDatabase> compilation_database;
     std::vector<std::unique_ptr<clang::ASTUnit>> ast_units;
     DirectoryTree tsepepe_temp_directory_tree;

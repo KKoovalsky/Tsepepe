@@ -6,15 +6,14 @@
 #include "implement_interface_code_action.hpp"
 
 #include <filesystem>
-#include <fstream>
-#include <memory>
-#include <sstream>
+#include <regex>
 
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
 #include <clang/Tooling/Tooling.h>
 
 #include "base_error.hpp"
+#include "code_insertions_applier.hpp"
 #include "codebase_grepper.hpp"
 #include "directory_tree.hpp"
 #include "include_statement_place_resolver.hpp"
@@ -55,8 +54,6 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_r
                                                          InterfaceName iface_name,
                                                          CursorPositionLine cursor_position_line)
 {
-    using namespace Tsepepe;
-
     const auto& file_content{file_content_alias.get()};
     auto implementor_declaration{find_implementor(file_content, cursor_position_line.get())};
     if (implementor_declaration == nullptr)
@@ -66,23 +63,14 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_r
     if (interface_declaration == nullptr)
         throw BaseError{"No interface with the specified name found under the project root directory!"};
 
-    const auto& source_manager{ast_units.front()->getSourceManager()};
-    std::string implementor_full_name{implementor_declaration->getQualifiedNameAsString()};
-    auto include_statement_place{Tsepepe::resolve_include_statement_place(file_content)};
-    auto base_class_specifier_insertion{
-        Tsepepe::resolve_base_specifier(file_content, implementor_declaration, interface_declaration, source_manager)};
+    auto include_code_insertion{get_include_statement_code_insertion(file_content, interface_declaration)};
+    auto base_class_specifier_insertion{Tsepepe::resolve_base_specifier(
+        file_content, implementor_declaration, interface_declaration, ast_units.front()->getSourceManager())};
+    auto overrides_insertion{
+        get_overrides_code_insertion(file_content, implementor_declaration, interface_declaration)};
 
-    auto method_overrides{Tsepepe::pure_virtual_functions_to_override_declarations(
-        interface_declaration, implementor_full_name, source_manager)};
-    auto method_overrides_place{
-        Tsepepe::find_suitable_place_in_class_for_public_method(file_content, implementor_declaration, source_manager)};
-    
-    // auto file_id{source_manager.getPresumedLoc(implementor_declaration->getLocation()).getFileID()};
-    // auto method_overrides_location{source_manager.getComposedLoc(file_id, method_overrides_place.line
-    // source_manager.getSLocEntry
-
-
-    return {};
+    return apply_insertions(file_content,
+                            {include_code_insertion, base_class_specifier_insertion, overrides_insertion});
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -159,5 +147,50 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_implementor(const std::s
 bool Tsepepe::ImplementIntefaceCodeActionLibclangBased::is_include_already_in_place(
     const fs::path& header_path, const std::string& cpp_file_content) const
 {
-    return false;
+    const auto& header_filename{header_path.filename()};
+    std::regex re{"#include\\s+\".*?" + header_filename.string() + "\""};
+    return std::regex_search(cpp_file_content, re);
+}
+
+Tsepepe::CodeInsertionByOffset Tsepepe::ImplementIntefaceCodeActionLibclangBased::get_include_statement_code_insertion(
+    const std::string& file_content, const CXXRecordDecl* interface_declaration) const
+{
+    const auto& interface_file_source_manager{ast_units.back()->getSourceManager()};
+    auto interface_header_path{interface_file_source_manager.getFilename(interface_declaration->getLocation()).str()};
+    if (is_include_already_in_place(interface_header_path, file_content))
+        return {};
+
+    auto include_statement_place{Tsepepe::resolve_include_statement_place(file_content)};
+
+    std::string code{include_statement_place.is_newline_needed ? "\n" : ""};
+    code += "#include \"" + fs::path(interface_header_path).filename().string() + "\"\n";
+    return {.code = std::move(code), .offset = include_statement_place.offset};
+}
+
+Tsepepe::CodeInsertionByOffset Tsepepe::ImplementIntefaceCodeActionLibclangBased::get_overrides_code_insertion(
+    const std::string& file_content,
+    const CXXRecordDecl* implementor_declaration,
+    const CXXRecordDecl* interface_declaration) const
+{
+    const auto& implementor_file_source_manager{ast_units.front()->getSourceManager()};
+    const auto& interface_file_source_manager{ast_units.back()->getSourceManager()};
+
+    auto indentation{
+        (Lexer::getIndentationForLine(implementor_declaration->getLocation(), implementor_file_source_manager) + "    ")
+            .str()};
+
+    std::string implementor_full_name{implementor_declaration->getQualifiedNameAsString()};
+    auto method_overrides{Tsepepe::pure_virtual_functions_to_override_declarations(
+        interface_declaration, implementor_full_name, interface_file_source_manager)};
+    auto method_overrides_place{Tsepepe::find_suitable_place_in_class_for_public_method(
+        file_content, implementor_declaration, implementor_file_source_manager)};
+
+    std::string code{method_overrides_place.is_public_section_needed ? "public:\n" : ""};
+    for (auto& override_ : method_overrides)
+    {
+        code += indentation;
+        code += std::move(override_);
+        code += '\n';
+    }
+    return {.code = std::move(code), .offset = method_overrides_place.offset};
 }
