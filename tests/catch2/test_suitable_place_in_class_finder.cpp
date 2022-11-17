@@ -69,16 +69,16 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "\n",
                                            .class_name = "Yolo",
                                            .expected_result = {.offset = 64}},
-        // SuitablePlaceInClassFinderTestData{
-        //     .description = "In a class with private methods",
-        //     .header_file_content = "class Maka\n"
-        //                            "{\n"
-        //                            "private:\n"
-        //                            "    void gimme();\n"
-        //                            "    void sijek();\n"
-        //                            "};\n",
-        //     .class_name = "Maka",
-        //     .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 12, .is_public_section_needed = true}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In a class with private methods",
+            .header_file_content = "class Maka\n"
+                                   "{\n"
+                                   "private:\n"
+                                   "    void gimme();\n"
+                                   "    void sijek();\n"
+                                   "};\n",
+            .class_name = "Maka",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 13, .is_public_section_needed = true}},
         SuitablePlaceInClassFinderTestData{.description = "In a class with public and private section, in that order",
                                            .header_file_content = "\n"
                                                                   "class Bumm\n"
@@ -89,53 +89,51 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "\n",
                                            .class_name = "Bumm",
                                            .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 22}},
-        // SuitablePlaceInClassFinderTestData{.description = "In a class with private and public section, in that
-        // order",
-        //                                    .header_file_content = "\n"
-        //                                                           "\n"
-        //                                                           "class Bumm\n"
-        //                                                           "{\n"
-        //                                                           "private:\n"
-        //                                                           "public:\n"
-        //                                                           "};\n"
-        //                                                           "\n",
-        //                                    .class_name = "Bumm",
-        //                                    .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 6}},
-        //
-        // SuitablePlaceInClassFinderTestData{
-        //     .description = "In a class with public, private and one more public section, in that order",
-        //     .header_file_content = "\n"
-        //                            "class Masta\n"
-        //                            "{\n"
-        //                            "public:\n"
-        //                            "\n"
-        //                            "private:\n"
-        //                            "\n"
-        //                            "public:\n"
-        //                            "};\n"
-        //                            "\n",
-        //     .class_name = "Masta",
-        //     .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}},
-        // SuitablePlaceInClassFinderTestData{.description = "In an empty struct",
-        //                                    .header_file_content = "struct Yolo\n"
-        //                                                           "{\n"
-        //                                                           "};\n",
-        //                                    .class_name = "Yolo",
-        //                                    .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2}},
-        // SuitablePlaceInClassFinderTestData{.description = "In an empty inline struct",
-        //                                    .header_file_content = "struct Yolo {}",
-        //                                    .class_name = "Yolo",
-        //                                    .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2}},
-        // SuitablePlaceInClassFinderTestData{.description = "In a struct with properties only",
-        //                                    .header_file_content = "#include <string>\n"
-        //                                                           "\n"
-        //                                                           "struct Yolo\n"
-        //                                                           "{\n"
-        //                                                           "    std::string s;\n"
-        //                                                           "    unsigned n;\n"
-        //                                                           "};\n",
-        //                                    .class_name = "Yolo",
-        //                                    .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 4}},
+        SuitablePlaceInClassFinderTestData{.description = "In a class with private and public section, in that order",
+                                           .header_file_content = "\n"
+                                                                  "\n"
+                                                                  "class Bumm\n"
+                                                                  "{\n"
+                                                                  "private:\n"
+                                                                  "public:\n"
+                                                                  "};\n"
+                                                                  "\n",
+                                           .class_name = "Bumm",
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 32}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In a class with public, private and one more public section, in that order",
+            .header_file_content = "\n"
+                                   "class Masta\n"
+                                   "{\n"
+                                   "public:\n"
+                                   "\n"
+                                   "private:\n"
+                                   "\n"
+                                   "public:\n"
+                                   "};\n"
+                                   "\n",
+            .class_name = "Masta",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 23}},
+        SuitablePlaceInClassFinderTestData{.description = "In an empty struct",
+                                           .header_file_content = "struct Yolo\n"
+                                                                  "{\n"
+                                                                  "};\n",
+                                           .class_name = "Yolo",
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 14}},
+        SuitablePlaceInClassFinderTestData{.description = "In an empty inline struct",
+                                           .header_file_content = "struct Yolo {};",
+                                           .class_name = "Yolo",
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 13}},
+        SuitablePlaceInClassFinderTestData{.description = "In a struct with properties only",
+                                           .header_file_content = "#include <string>\n"
+                                                                  "\n"
+                                                                  "struct Yolo\n"
+                                                                  "{\n"
+                                                                  "    std::string s;\n"
+                                                                  "    unsigned n;\n"
+                                                                  "};\n",
+                                           .class_name = "Yolo",
+                                           .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 33}},
         SuitablePlaceInClassFinderTestData{.description = "In a struct with few public methods",
                                            .header_file_content = "\n"
                                                                   "struct Yolo\n"
@@ -183,34 +181,39 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
                                                                   "};\n",
                                            .class_name = "Yolo",
                                            .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 73}},
-        // SuitablePlaceInClassFinderTestData{
-        //     .description = "In an empty class",
-        //     .header_file_content = "\n"
-        //                            "class Yolo\n"
-        //                            "{\n"
-        //                            "};\n",
-        //     .class_name = "Yolo",
-        //     .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 3, .is_public_section_needed = true}},
-        // SuitablePlaceInClassFinderTestData{
-        //     .description = "In an empty class with the opening bracket on the same line as the class name",
-        //     .header_file_content = "\n"
-        //                            "class Yolo {\n"
-        //                            "\n"
-        //                            "};\n",
-        //     .class_name = "Yolo",
-        //     .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 2, .is_public_section_needed = true}},
-        // SuitablePlaceInClassFinderTestData{
-        //     .description = "In a class with private section only",
-        //     .header_file_content = "\n"
-        //                            "class Yolo \n"
-        //                            "{\n"
-        //                            "  private:\n"
-        //                            "    unsigned i;\n"
-        //                            "    float f;\n"
-        //                            "\n"
-        //                            "};\n",
-        //     .class_name = "Yolo",
-        //     .expected_result = SuitablePublicMethodPlaceInCppFile{.line = 3, .is_public_section_needed = true}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In an empty class",
+            .header_file_content = "\n"
+                                   "class Yolo\n"
+                                   "{\n"
+                                   "};\n",
+            .class_name = "Yolo",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 14, .is_public_section_needed = true}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In an empty inline class",
+            .header_file_content = "class Bambar {};",
+            .class_name = "Bambar",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 14, .is_public_section_needed = true}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In an empty class with the opening bracket on the same line as the class name",
+            .header_file_content = "\n"
+                                   "class Yolo {\n"
+                                   "\n"
+                                   "};\n",
+            .class_name = "Yolo",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 14, .is_public_section_needed = true}},
+        SuitablePlaceInClassFinderTestData{
+            .description = "In a class with private section only",
+            .header_file_content = "\n"
+                                   "class Yolo \n"
+                                   "{\n"
+                                   "  private:\n"
+                                   "    unsigned i;\n"
+                                   "    float f;\n"
+                                   "\n"
+                                   "};\n",
+            .class_name = "Yolo",
+            .expected_result = SuitablePublicMethodPlaceInCppFile{.offset = 15, .is_public_section_needed = true}},
     };
     auto [description, header_file_content, class_name, expected_result] = GENERATE(values(test_data));
     INFO(description);
@@ -231,6 +234,3 @@ TEST_CASE("Finds suitable place in classes to put a new public function declarat
         find_suitable_place_in_class_for_public_method(header_file_content, node, ast_unit->getSourceManager())};
     REQUIRE(result == expected_result);
 }
-
-// struct Yolo {     Yolo() {}      ~Yolo()     {     }      void gimme(); };
-//  struct Yolo {     Yolo() {}      ~Yolo()     {     }      void gimme()     {     } };
