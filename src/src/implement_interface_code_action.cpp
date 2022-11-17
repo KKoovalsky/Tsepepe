@@ -22,7 +22,6 @@
 #include "libclang_utils/presumed_source_range.hpp"
 #include "libclang_utils/pure_virtual_functions_extractor.hpp"
 #include "libclang_utils/suitable_place_in_class_finder.hpp"
-#include "clang/Basic/SourceLocation.h"
 
 using namespace clang;
 using namespace clang::tooling;
