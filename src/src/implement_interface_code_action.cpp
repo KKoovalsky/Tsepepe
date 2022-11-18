@@ -35,6 +35,12 @@ AST_MATCHER(CXXRecordDecl, isAbstract)
     return Node.hasDefinition() and Node.isAbstract();
 };
 
+AST_MATCHER_P(CXXRecordDecl, isWithinFile, std::string, filename)
+{
+    const auto& source_manager{Finder->getASTContext().getSourceManager()};
+    return source_manager.getFilename(Node.getLocation()) == filename;
+};
+
 // --------------------------------------------------------------------------------------------------------------------
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
@@ -116,7 +122,8 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_implementor(const std::s
     tool.buildASTs(ast_units);
 
     auto& ast_unit{*ast_units.back()};
-    auto class_matcher{ast_matchers::cxxRecordDecl(ast_matchers::hasDefinition()).bind("class")};
+    auto class_matcher{
+        ast_matchers::cxxRecordDecl(ast_matchers::hasDefinition(), isWithinFile(full_path_to_temp_file)).bind("class")};
     auto matches{ast_matchers::match(class_matcher, ast_unit.getASTContext())};
     if (matches.empty())
         return nullptr;
@@ -124,6 +131,9 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_implementor(const std::s
     const auto& source_manager{ast_unit.getSourceManager()};
     const CXXRecordDecl* result{nullptr};
 
+    // Get class which has the deepest nesting and has the line under cursor within.
+    // FIXME: we can add an AST_MATCHER_P(containsLineNumber, ...) and take the last match, which will be the most
+    // deeply nested class that has the line under cursor.
     PresumedSourceRange match_source_range;
     for (const auto& match : matches)
     {

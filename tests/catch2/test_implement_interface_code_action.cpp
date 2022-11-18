@@ -4,6 +4,7 @@
  */
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 
 #include "directory_tree.hpp"
 #include "implement_interface_code_action.hpp"
@@ -68,10 +69,199 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
     SECTION("Implements a compound interface")
     {
+        GIVEN("An interface")
+        {
+            directory_tree.create_file("runnable.hpp",
+                                       "struct Runnable\n"
+                                       "{\n"
+                                       "    virtual void run() = 0;\n"
+                                       "    virtual int stop(unsigned timeout_ms) = 0;\n"
+                                       "};\n");
+
+            AND_GIVEN("Another interface")
+            {
+
+                directory_tree.create_file("printable.hpp",
+                                           "struct Printable\n"
+                                           "{\n"
+                                           "    struct Error {};\n"
+                                           "    virtual Error print(const char*, unsigned length) = 0;\n"
+                                           "};\n");
+
+                AND_GIVEN("A compound interface which comprises these two interfaces")
+                {
+                    directory_tree.create_file("runnable_and_printable.hpp",
+                                               "#include \"runnable.hpp\"\n"
+                                               "#include \"printable.hpp\"\n"
+                                               "struct RunnableAndPrintable : Runnable, Printable\n"
+                                               "{\n"
+                                               "};\n");
+
+                    AND_GIVEN("A class definition")
+                    {
+                        std::string class_def{
+                            "struct Maker\n"
+                            "{\n"
+                            "};\n"};
+
+                        WHEN("The compound interface is requested to be implemented")
+                        {
+                            unsigned cursor_position_line = GENERATE(1, 2, 3);
+                            auto result{code_action.apply(RootDirectory{"temp"},
+                                                          FileContentConstRef{class_def},
+                                                          InterfaceName{"RunnableAndPrintable"},
+                                                          CursorPositionLine{cursor_position_line})};
+
+                            THEN("The class definition implements the compound interface")
+                            {
+                                std::string expected_result{
+                                    "#include \"runnable_and_printable.hpp\"\n"
+                                    "struct Maker : RunnableAndPrintable\n"
+                                    "{\n"
+                                    "    void run() override;\n"
+                                    "    int stop(unsigned int timeout_ms) override;\n"
+                                    "    Error print(const char *, unsigned int length) override;\n"
+                                    "};\n"};
+
+                                REQUIRE(result == expected_result);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     SECTION("Extends pretty big class")
     {
+        GIVEN("An interface")
+        {
+            std::string iface{
+                "/**\n"
+                " * @file        logger.hpp\n"
+                " * @brief       Logger interface.\n"
+                " * @author      Kacper Kowalski - kacper.s.kowalski@gmail.com\n"
+                " */\n"
+                "#ifndef LOGGER_HPP\n"
+                "#define LOGGER_HPP\n"
+                "\n"
+                "enum class LogLevel\n"
+                "{\n"
+                "    debug,\n"
+                "    info,\n"
+                "    error,\n"
+                "    raw\n"
+                "};\n"
+                "\n"
+                "inline constexpr const char* log_level_to_string(LogLevel level)\n"
+                "{\n"
+                "    switch (level)\n"
+                "    {\n"
+                "    case LogLevel::debug:\n"
+                "        return \"[DEBUG]\";\n"
+                "    case LogLevel::info:\n"
+                "        return \"[INFO]\";\n"
+                "    case LogLevel::error:\n"
+                "        return \"[ERROR]\";\n"
+                "    default:\n"
+                "        return \"\";\n"
+                "    }\n"
+                "};\n"
+                "\n"
+                "struct Logger\n"
+                "{\n"
+                "    virtual void log(LogLevel, const char* format) = 0;\n"
+                "\n"
+                "    virtual ~Logger() = default;\n"
+                "};\n"
+                "\n"
+                "#endif /* LOGGER_HPP */\n"};
+
+            directory_tree.create_file("logger.hpp", std::move(iface));
+
+            AND_GIVEN("A class definition")
+            {
+                std::string class_def{
+                    "/**\n"
+                    " * @file        directory_tree.hpp\n"
+                    " * @brief       Defines directory tree.\n"
+                    " */\n"
+                    "#ifndef DIRECTORY_TREE_HPP\n"
+                    "#define DIRECTORY_TREE_HPP\n"
+                    "\n"
+                    "#include <filesystem>\n"
+                    "\n"
+                    "namespace Tsepepe\n"
+                    "{\n"
+                    "\n"
+                    "class DirectoryTree\n"
+                    "{\n"
+                    "  public:\n"
+                    "    explicit DirectoryTree(std::filesystem::path root);\n"
+                    "    ~DirectoryTree();\n"
+                    "\n"
+                    "    std::filesystem::path create_file(std::filesystem::path relative_path_from_root, std::string "
+                    "file_content);\n"
+                    "    std::string load_file(std::filesystem::path relative_path_from_root);\n"
+                    "\n"
+                    "  private:\n"
+                    "    std::filesystem::path root;\n"
+                    "};\n"
+                    "\n"
+                    "} // namespace Tsepepe\n"
+                    "\n"
+                    "#endif /* DIRECTORY_TREE_HPP */\n"};
+
+                WHEN("The interface is requested to be implemented")
+                {
+                    // FIXME: shall work for the line 25 as well (range() generates a range: [13, 25) )!
+                    unsigned cursor_position_line = GENERATE(range(13, 25));
+                    auto result{code_action.apply(RootDirectory{"temp"},
+                                                  FileContentConstRef{class_def},
+                                                  InterfaceName{"Logger"},
+                                                  CursorPositionLine{cursor_position_line})};
+
+                    THEN("The class definition implements the compound interface")
+                    {
+                        std::string expected_result{
+                            "/**\n"
+                            " * @file        directory_tree.hpp\n"
+                            " * @brief       Defines directory tree.\n"
+                            " */\n"
+                            "#ifndef DIRECTORY_TREE_HPP\n"
+                            "#define DIRECTORY_TREE_HPP\n"
+                            "\n"
+                            "#include <filesystem>\n"
+                            "\n"
+                            "#include \"logger.hpp\"\n"
+                            "\n"
+                            "namespace Tsepepe\n"
+                            "{\n"
+                            "\n"
+                            "class DirectoryTree : public Logger\n"
+                            "{\n"
+                            "  public:\n"
+                            "    explicit DirectoryTree(std::filesystem::path root);\n"
+                            "    ~DirectoryTree();\n"
+                            "\n"
+                            "    std::filesystem::path create_file(std::filesystem::path relative_path_from_root, "
+                            "std::string "
+                            "file_content);\n"
+                            "    std::string load_file(std::filesystem::path relative_path_from_root);\n"
+                            "    void log(LogLevel, const char * format) override;\n"
+                            "\n"
+                            "  private:\n"
+                            "    std::filesystem::path root;\n"
+                            "};\n"
+                            "\n"
+                            "} // namespace Tsepepe\n"
+                            "\n"
+                            "#endif /* DIRECTORY_TREE_HPP */\n"};
+                        REQUIRE(result == expected_result);
+                    }
+                }
+            }
+        }
     }
 
     SECTION("Properly resolves types nested within the interface")
