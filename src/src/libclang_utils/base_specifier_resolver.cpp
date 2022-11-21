@@ -81,9 +81,10 @@ static SourceLocation get_end_of_token_before_opening_bracket(const CXXRecordDec
 
 static bool is_already_deriving(const CXXRecordDecl* potentially_deriving_class, const CXXRecordDecl* base_class)
 {
+    const auto& base_class_name_searched{base_class->getQualifiedNameAsString()};
     bool is_found{false};
     potentially_deriving_class->forallBases([&](const CXXRecordDecl* base) {
-        if (base_class == base)
+        if (base_class_name_searched == base->getQualifiedNameAsString())
         {
             is_found = true;
             return false;
