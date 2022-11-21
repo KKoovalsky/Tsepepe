@@ -548,28 +548,122 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
         }
     }
 
-    SECTION("Implementor is an empty class")
+    SECTION("Implementor is an empty inline class")
     {
+        GIVEN("An interface")
+        {
+            std::string iface{
+                "struct Scanner\n"
+                "{\n"
+                "    virtual int scan() = 0;\n"
+                "    virtual ~Scanner() = default;\n"
+                "};\n"};
+            directory_tree.create_file("scanner.hpp", std::move(iface));
+
+            AND_GIVEN("A bare class")
+            {
+                std::string class_def{"class Yolo {};"};
+
+                WHEN("The bare class is going to implement the interface")
+                {
+                    auto result{code_action.apply(
+                        RootDirectory{"temp"},
+                        FileRecord{.path = working_root_dir / "implementor.hpp", .content = class_def},
+                        InterfaceName{"Scanner"},
+                        CursorPositionLine{1})};
+
+                    THEN("The class is properly extended")
+                    {
+                        std::string expected_result{
+                            "#include \"scanner.hpp\"\n"
+                            "class Yolo : public Scanner {public:\n"
+                            "    int scan() override;\n"
+                            "};"};
+
+                        REQUIRE(result == expected_result);
+                    }
+                }
+            }
+        }
     }
-    SECTION("Implementor is an empty struct")
-    {
-    }
+
     SECTION("Implementor is a struct with mutliple methods")
     {
+        GIVEN("An interface")
+        {
+            std::string iface{
+                "#include <string>\n"
+                "#include <vector>\n"
+                "\n"
+                "struct Interface\n"
+                "{\n"
+                "    virtual void do_stuff() = 0;\n"
+                "};\n"};
+            directory_tree.create_file("interface.hpp", std::move(iface));
+
+            AND_GIVEN("An about-to-be implementor which is a struct with multiple methods")
+            {
+                std::string struct_{
+                    "#include <utility>\n"
+                    "#include <string_view>\n"
+                    "\n"
+                    "struct SomeStruct\n"
+                    "{\n"
+                    "    SomeStruct() = default;\n"
+                    "    std::pair<double, std::string_view> yolo();\n"
+                    "\n"
+                    "    int bang(std::pair<double, std::string_view>) {\n"
+                    "        return 0;"
+                    "    }\n"
+                    "};\n"};
+
+                WHEN("The implement interface code action is invoked")
+                {
+                    auto result{
+                        code_action.apply(RootDirectory{"temp"},
+                                          FileRecord{.path = working_root_dir / "implementor.hpp", .content = struct_},
+                                          InterfaceName{"Interface"},
+                                          CursorPositionLine{8})};
+
+                    THEN("The struct is properly extended")
+                    {
+                        std::string expected_result{
+                            "#include <utility>\n"
+                            "#include <string_view>\n"
+                            "\n"
+                            "#include \"interface.hpp\"\n"
+                            "\n"
+                            "struct SomeStruct : Interface\n"
+                            "{\n"
+                            "    SomeStruct() = default;\n"
+                            "    std::pair<double, std::string_view> yolo();\n"
+                            "\n"
+                            "    int bang(std::pair<double, std::string_view>) {\n"
+                            "        return 0;"
+                            "    }\n"
+                            "    void do_stuff() override;\n"
+                            "};\n"};
+
+                        REQUIRE(result == expected_result);
+                    }
+                }
+            }
+        }
     }
-    SECTION("Implementor is a class with mutliple public methods")
-    {
-    }
-    SECTION("Implementor is a class with only a private section")
-    {
-    }
-    SECTION("Implementor is a class with a single public section")
-    {
-    }
+
     SECTION("Does not add include if the interface already included")
     {
     }
+
     SECTION("Does not add base class specifier if already exists")
+    {
+    }
+
+    SECTION("Error is raised when no class under cursor is found")
+    {
+    }
+
+    SECTION("Extends the most deeply nested class under cursor")
     {
     }
 }
