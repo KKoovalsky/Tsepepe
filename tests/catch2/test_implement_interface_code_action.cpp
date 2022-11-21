@@ -801,5 +801,66 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
     SECTION("Extends the most deeply nested class under cursor")
     {
+        GIVEN("An interface")
+        {
+            std::string iface{
+                "#include <string>\n"
+                "#include <vector>\n"
+                "\n"
+                "struct Interface\n"
+                "{\n"
+                "    virtual void do_stuff() = 0;\n"
+                "};\n"};
+            directory_tree.create_file("interface.hpp", std::move(iface));
+
+            AND_GIVEN("Multiple nested structs")
+            {
+                std::string structs{
+                    "struct Top\n"
+                    "{\n"
+                    "    struct Nested\n"
+                    "    {\n"
+                    "        struct EvenMoreNested\n"
+                    "        {\n"
+                    "            struct ShittyNesting\n"
+                    "            {\n"
+                    "            };\n"
+                    "        };\n"
+                    "    };\n"
+                    "};\n"};
+
+                WHEN("We extend the almost the most deeply nested struct")
+                {
+                    // FIXME: shall work for '10' as well.
+                    unsigned line = GENERATE(values({5, 6}));
+                    auto result{
+                        code_action.apply(RootDirectory{"temp"},
+                                          FileRecord{.path = working_root_dir / "implementor.hpp", .content = structs},
+                                          InterfaceName{"Interface"},
+                                          CursorPositionLine{line})};
+
+                    THEN("The almost most deeply nested struct is extended")
+                    {
+                        std::string expected_result{
+                            "#include \"interface.hpp\"\n"
+                            "struct Top\n"
+                            "{\n"
+                            "    struct Nested\n"
+                            "    {\n"
+                            "        struct EvenMoreNested : Interface\n"
+                            "        {\n"
+                            "            void do_stuff() override;\n"
+                            "            struct ShittyNesting\n"
+                            "            {\n"
+                            "            };\n"
+                            "        };\n"
+                            "    };\n"
+                            "};\n"};
+
+                        REQUIRE(result == expected_result);
+                    }
+                }
+            }
+        }
     }
 }
