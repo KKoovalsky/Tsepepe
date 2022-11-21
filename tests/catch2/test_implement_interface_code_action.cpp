@@ -748,6 +748,55 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
     SECTION("Error is raised when no class under cursor is found")
     {
+        GIVEN("An interface")
+        {
+            std::string iface{
+                "#include <string>\n"
+                "#include <vector>\n"
+                "\n"
+                "struct Interface\n"
+                "{\n"
+                "    virtual void do_stuff() = 0;\n"
+                "};\n"};
+            directory_tree.create_file("interface.hpp", std::move(iface));
+
+            AND_GIVEN("A struct")
+            {
+                std::string struct_{
+                    "#include <string>\n"
+                    "#include <vector>\n"
+                    "\n"
+                    "struct SomeStruct\n"
+                    "{\n"
+                    "};\n"
+                    "\n"
+                    "\n"
+                    "using String = std::string;\n"};
+
+                WHEN(
+                    "The implement interface code action is invoked with cursor under a line which is not a class "
+                    "definition")
+                {
+                    unsigned line = GENERATE(values({1, 2, 3, 7, 8, 9, 15}));
+
+                    THEN("An error is raised")
+                    {
+                        auto do_apply{[&]() {
+                            code_action.apply(
+                                RootDirectory{"temp"},
+                                FileRecord{.path = working_root_dir / "implementor.hpp", .content = struct_},
+                                InterfaceName{"Interface"},
+                                CursorPositionLine{line});
+                        }};
+
+                        REQUIRE_THROWS_AS(do_apply(), Tsepepe::BaseError);
+                        REQUIRE_THROWS_WITH(do_apply(),
+                                            Catch::Matchers::ContainsSubstring("cursor")
+                                                and Catch::Matchers::ContainsSubstring("found"));
+                    }
+                }
+            }
+        }
     }
 
     SECTION("Extends the most deeply nested class under cursor")
