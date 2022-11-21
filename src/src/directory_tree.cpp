@@ -37,3 +37,8 @@ std::filesystem::path Tsepepe::DirectoryTree::create_file(std::filesystem::path 
     std::ofstream{path} << file_content;
     return fs::absolute(path).lexically_normal();
 }
+
+std::filesystem::path Tsepepe::DirectoryTree::get_root_absolute_path() const
+{
+    return fs::absolute(root).lexically_normal();
+}

@@ -5,7 +5,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "base_error.hpp"
 #include "directory_tree.hpp"
 #include "implement_interface_code_action.hpp"
 
@@ -14,6 +17,7 @@ using namespace Tsepepe;
 TEST_CASE("Generate code that makes a class implement an interface", "[ImplementInterfaceCodeAction]")
 {
     DirectoryTree directory_tree{"temp"};
+    auto working_root_dir{directory_tree.get_root_absolute_path()};
 
     std::string error_message;
     std::shared_ptr<clang::tooling::CompilationDatabase> compilation_database{
@@ -47,7 +51,7 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                 {
                     unsigned cursor_position_line = GENERATE(1, 2, 3);
                     auto result{code_action.apply(RootDirectory{"temp"},
-                                                  FileContentConstRef{class_def},
+                                                  FileRecord{.path = working_root_dir, .content = class_def},
                                                   InterfaceName{"Runnable"},
                                                   CursorPositionLine{cursor_position_line})};
 
@@ -108,7 +112,7 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                         {
                             unsigned cursor_position_line = GENERATE(1, 2, 3);
                             auto result{code_action.apply(RootDirectory{"temp"},
-                                                          FileContentConstRef{class_def},
+                                                          FileRecord{.path = working_root_dir, .content = class_def},
                                                           InterfaceName{"RunnableAndPrintable"},
                                                           CursorPositionLine{cursor_position_line})};
 
@@ -217,7 +221,7 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                     // FIXME: shall work for the line 25 as well (range() generates a range: [13, 25) )!
                     unsigned cursor_position_line = GENERATE(range(13, 25));
                     auto result{code_action.apply(RootDirectory{"temp"},
-                                                  FileContentConstRef{class_def},
+                                                  FileRecord{.path = working_root_dir, .content = class_def},
                                                   InterfaceName{"Logger"},
                                                   CursorPositionLine{cursor_position_line})};
 
@@ -305,7 +309,7 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                 WHEN("The interface is requested to be implemented")
                 {
                     auto result{code_action.apply(RootDirectory{"temp"},
-                                                  FileContentConstRef{class_def},
+                                                  FileRecord{.path = working_root_dir, .content = class_def},
                                                   InterfaceName{"Logger"},
                                                   CursorPositionLine{1})};
 
@@ -356,7 +360,7 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                 WHEN("The interface is requested to be implemented")
                 {
                     auto result{code_action.apply(RootDirectory{"temp"},
-                                                  FileContentConstRef{class_def},
+                                                  FileRecord{.path = working_root_dir, .content = class_def},
                                                   InterfaceName{"Scanner"},
                                                   CursorPositionLine{5})};
 
@@ -380,29 +384,113 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
         }
     }
 
-    SECTION(
-        "Properly resolves types nested within the same namespace the interface is defined, but outside of the "
-        "interface, when the implementor is in the same namespace")
-    {
-    }
     SECTION("Error when interface not found")
     {
+        std::string class_def{"struct Yolo {};\n"};
+        REQUIRE_THROWS_AS(code_action.apply(RootDirectory{"temp"},
+                                            FileRecord{.path = working_root_dir, .content = class_def},
+                                            InterfaceName{"Scanner"},
+                                            CursorPositionLine{1}),
+                          Tsepepe::BaseError);
+        REQUIRE_THROWS_WITH(code_action.apply(RootDirectory{"temp"},
+                                              FileRecord{.path = working_root_dir, .content = class_def},
+                                              InterfaceName{"Scanner"},
+                                              CursorPositionLine{1}),
+                            Catch::Matchers::ContainsSubstring("interface")
+                                and Catch::Matchers::ContainsSubstring("found"));
     }
+
     SECTION("Error when interface not found, but a normal class exists with the given name")
     {
+        std::string iface{
+            "namespace Interface\n"
+            "{\n"
+            "    struct ScanResult {};\n"
+            "    struct Scanner\n"
+            "    {\n"
+            "    };\n"
+            "};\n"};
+        directory_tree.create_file("scanner.hpp", std::move(iface));
+
+        std::string class_def{"struct Yolo {};\n"};
+        REQUIRE_THROWS_AS(code_action.apply(RootDirectory{"temp"},
+                                            FileRecord{.path = working_root_dir, .content = class_def},
+                                            InterfaceName{"Scanner"},
+                                            CursorPositionLine{1}),
+                          Tsepepe::BaseError);
+        REQUIRE_THROWS_WITH(code_action.apply(RootDirectory{"temp"},
+                                              FileRecord{.path = working_root_dir, .content = class_def},
+                                              InterfaceName{"Scanner"},
+                                              CursorPositionLine{1}),
+                            Catch::Matchers::ContainsSubstring("interface")
+                                and Catch::Matchers::ContainsSubstring("found"));
     }
-    SECTION("Does not load file from filesystem, but from standard input")
-    {
-    }
-    SECTION("Implementor is a class with no base classes")
-    {
-    }
-    SECTION("Implementor is a class with a single base class")
-    {
-    }
+
     SECTION("Implementor is a class with multiple base classes span over multiple lines")
     {
+        GIVEN("An interface")
+        {
+            std::string iface{
+                "struct ScanResult {};\n"
+                "struct Scanner\n"
+                "{\n"
+                "    virtual ScanResult scan() = 0;\n"
+                "    virtual ~Scanner() = default;\n"
+                "};\n"};
+            directory_tree.create_file("scanner.hpp", std::move(iface));
+
+            AND_GIVEN("Some classes to be extended")
+            {
+                std::string other_classes{
+                    "struct One {};\n"
+                    "struct Two {};\n"
+                    "struct Three {};\n"};
+                directory_tree.create_file("others.hpp", std::move(other_classes));
+
+                AND_GIVEN("The class which inherits from multiple base classes")
+                {
+                    std::string class_def{
+                        "#include \"others.hpp\"\n"
+                        "\n"
+                        "class Implementor : public One,\n"
+                        "                    public Two,\n"
+                        "                    public Three\n"
+                        "{\n"
+                        "};\n"};
+
+                    WHEN("The interface is being implemented")
+                    {
+                        auto result{code_action.apply(RootDirectory{"temp"},
+                                                      FileRecord{.path = working_root_dir, .content = class_def},
+                                                      InterfaceName{"Scanner"},
+                                                      CursorPositionLine{4})};
+
+                        THEN("The base-clause is properly extended")
+                        {
+                            std::string expected_result{
+                                "#include \"others.hpp\"\n"
+                                "#include \"scanner.hpp\"\n"
+                                "\n"
+                                "class Implementor : public One,\n"
+                                "                    public Two,\n"
+                                "                    public Three, public Scanner\n"
+                                "{\n"
+                                "public:\n"
+                                "    ScanResult scan() override;\n"
+                                "};\n"};
+
+                            REQUIRE(result == expected_result);
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    SECTION("Both interface file and implementor file is nested deeply within the file system")
+    {
+    }
+
     SECTION("Implementor is an empty class")
     {
     }

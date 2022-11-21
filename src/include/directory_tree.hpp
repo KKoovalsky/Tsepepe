@@ -19,6 +19,8 @@ class DirectoryTree
     std::filesystem::path create_file(std::filesystem::path relative_path_from_root, std::string file_content);
     std::string load_file(std::filesystem::path relative_path_from_root);
 
+    std::filesystem::path get_root_absolute_path() const;
+
   private:
     std::filesystem::path root;
 };

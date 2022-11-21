@@ -55,12 +55,12 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::ImplementIntefaceCodeActionLi
 
 Tsepepe::NewFileContent
 Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_root,
-                                                         FileContentConstRef file_content_alias,
+                                                         const FileRecord& file_record,
                                                          InterfaceName iface_name,
                                                          CursorPositionLine cursor_position_line)
 {
-    const auto& file_content{file_content_alias.get()};
-    auto implementor_declaration{find_implementor(file_content, cursor_position_line.get())};
+    const auto& file_content{file_record.content};
+    auto implementor_declaration{find_implementor(file_record, cursor_position_line.get())};
     if (implementor_declaration == nullptr)
         throw BaseError{"No class/struct found under cursor!"};
 
@@ -113,10 +113,10 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_interface(const fs::path
 }
 
 const clang::CXXRecordDecl*
-Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_implementor(const std::string& file_content,
+Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_implementor(const FileRecord& file,
                                                                     unsigned cursor_position_line)
 {
-    auto full_path_to_temp_file{this_code_action_directory_tree.create_file("implementor.hpp", file_content)};
+    auto full_path_to_temp_file{make_temporary_source_file(file)};
 
     ClangTool tool{*compilation_database, {full_path_to_temp_file.string()}};
     tool.buildASTs(ast_units);
@@ -202,4 +202,21 @@ Tsepepe::CodeInsertionByOffset Tsepepe::ImplementIntefaceCodeActionLibclangBased
         code += '\n';
     }
     return {.code = std::move(code), .offset = method_overrides_place.offset};
+}
+
+std::filesystem::path
+Tsepepe::ImplementIntefaceCodeActionLibclangBased::make_temporary_source_file(const FileRecord& file)
+{
+    fs::path temp_file_path;
+    if (not fs::is_directory(file.path))
+    {
+        // Assume is the path is a path to a file.
+        std::string fname{".tsepepe_" + file.path.filename().string()};
+        temp_file_path = file.path.parent_path() / std::move(fname);
+    } else
+    {
+        temp_file_path = file.path / ".tsepepe_implementor_temp.hpp";
+    }
+
+    return this_code_action_directory_tree.create_file(std::move(temp_file_path), file.content);
 }
