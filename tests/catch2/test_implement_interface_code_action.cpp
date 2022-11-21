@@ -266,12 +266,120 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
     SECTION("Properly resolves types nested within the interface")
     {
+        GIVEN("An interface returning some nested types")
+        {
+            std::string iface{
+                "/**\n"
+                " * @file        logger.hpp\n"
+                " * @brief       Logger interface.\n"
+                " * @author      Kacper Kowalski - kacper.s.kowalski@gmail.com\n"
+                " */\n"
+                "#ifndef LOGGER_HPP\n"
+                "#define LOGGER_HPP\n"
+                "\n"
+                "struct Logger\n"
+                "{\n"
+                "    enum class LogLevel\n"
+                "    {\n"
+                "        debug,\n"
+                "        info,\n"
+                "        error,\n"
+                "        raw\n"
+                "    };\n"
+                "\n"
+                "    virtual void log(LogLevel, const char* format) = 0;\n"
+                "\n"
+                "    virtual ~Logger() = default;\n"
+                "};\n"
+                "\n"
+                "#endif /* LOGGER_HPP */\n"};
+
+            directory_tree.create_file("logger.hpp", std::move(iface));
+
+            AND_GIVEN("A class")
+            {
+                std::string class_def{
+                    "struct Yolo {\n"
+                    "};\n"};
+
+                WHEN("The interface is requested to be implemented")
+                {
+                    auto result{code_action.apply(RootDirectory{"temp"},
+                                                  FileContentConstRef{class_def},
+                                                  InterfaceName{"Logger"},
+                                                  CursorPositionLine{1})};
+
+                    THEN("The nested type is properly scope-shortened")
+                    {
+                        std::string expected_result{
+                            "#include \"logger.hpp\"\n"
+                            "struct Yolo : Logger {\n"
+                            "    void log(LogLevel, const char * format) override;\n"
+                            "};\n"};
+
+                        REQUIRE(result == expected_result);
+                    }
+                }
+            }
+        }
     }
+
     SECTION(
-        "Properly resolves types nested within the same namespace the interface is defined, but outside of the "
-        "interface")
+        "Interface is within a namespace and uses types from that namespace, but the implementor is in another "
+        "namespace")
     {
+        GIVEN("An interface nested within a namespace")
+        {
+            std::string iface{
+                "namespace Interface\n"
+                "{\n"
+                "    struct ScanResult {};\n"
+                "    struct Scanner\n"
+                "    {\n"
+                "        virtual ScanResult scan() = 0;\n"
+                "        virtual ~Scanner() = default;\n"
+                "    };\n"
+                "};\n"};
+            directory_tree.create_file("scanner.hpp", std::move(iface));
+
+            AND_GIVEN("An about-to-be implementor")
+            {
+                std::string class_def{
+                    "#include <string>\n"
+                    "#include <vector>\n"
+                    "\n"
+                    "class Implementor\n"
+                    "{\n"
+                    "  public:\n"
+                    "};\n"};
+
+                WHEN("The interface is requested to be implemented")
+                {
+                    auto result{code_action.apply(RootDirectory{"temp"},
+                                                  FileContentConstRef{class_def},
+                                                  InterfaceName{"Scanner"},
+                                                  CursorPositionLine{5})};
+
+                    THEN("The types are properly resolved")
+                    {
+                        std::string expected_result{
+                            "#include <string>\n"
+                            "#include <vector>\n"
+                            "\n"
+                            "#include \"scanner.hpp\"\n"
+                            "\n"
+                            "class Implementor : public Interface::Scanner\n"
+                            "{\n"
+                            "  public:\n"
+                            "    Interface::ScanResult scan() override;\n"
+                            "};\n"};
+                        REQUIRE(result == expected_result);
+                    }
+                }
+            }
+        }
     }
+
     SECTION(
         "Properly resolves types nested within the same namespace the interface is defined, but outside of the "
         "interface, when the implementor is in the same namespace")
