@@ -22,6 +22,8 @@ Tsepepe::DirectoryTree::~DirectoryTree()
 
 std::string Tsepepe::DirectoryTree::load_file(std::filesystem::path relative_path_from_root)
 {
+    // FIXME: actually, when the relative_path_from_root is absolute, then it works too. In such a case (when
+    // relative_path_from_root is absolute), then the 'path' will be equal to relative_path_from_root.
     auto path{root / relative_path_from_root};
     std::ifstream ifs{path};
     std::stringstream buffer;

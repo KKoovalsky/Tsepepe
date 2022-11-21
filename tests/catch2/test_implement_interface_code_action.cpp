@@ -447,7 +447,7 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                     "struct Three {};\n"};
                 directory_tree.create_file("others.hpp", std::move(other_classes));
 
-                AND_GIVEN("The class which inherits from multiple base classes")
+                AND_GIVEN("A class which inherits from multiple base classes")
                 {
                     std::string class_def{
                         "#include \"others.hpp\"\n"
@@ -487,8 +487,65 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
         }
     }
 
-    SECTION("Both interface file and implementor file is nested deeply within the file system")
+    SECTION("Both interface and implementor files are nested deeply within the file system, and local files are used")
     {
+        GIVEN("An interface in some nested directory")
+        {
+            std::string iface{
+                "struct ScanResult {};\n"
+                "struct Scanner\n"
+                "{\n"
+                "    virtual ScanResult scan() = 0;\n"
+                "    virtual ~Scanner() = default;\n"
+                "};\n"};
+
+            directory_tree.create_file("include/interfaces/scanner.hpp", std::move(iface));
+
+            AND_GIVEN("A local file to be included by the implementor")
+            {
+                directory_tree.create_file("include/lib/real/implementor/yolo/others.hpp",
+                                           "struct One{};\n"
+                                           "struct Two{};\n"
+                                           "struct Three{};\n");
+
+                AND_GIVEN("A class which is nested deeply in another directory")
+                {
+                    FileRecord file{.path = working_root_dir / "include" / "lib" / "real" / "implementor"
+                                            / "implementor.hpp",
+                                    .content =
+                                        "#include \"yolo/others.hpp\"\n"
+                                        "\n"
+                                        "class Implementor : public One,\n"
+                                        "                    public Two,\n"
+                                        "                    public Three\n"
+                                        "{\n"
+                                        "};\n"};
+
+                    WHEN("The interface is being implemented")
+                    {
+                        auto result{code_action.apply(
+                            RootDirectory{"temp"}, file, InterfaceName{"Scanner"}, CursorPositionLine{4})};
+
+                        THEN("No errors related to inclusion occurr")
+                        {
+                            std::string expected_result{
+                                "#include \"yolo/others.hpp\"\n"
+                                "#include \"scanner.hpp\"\n"
+                                "\n"
+                                "class Implementor : public One,\n"
+                                "                    public Two,\n"
+                                "                    public Three, public Scanner\n"
+                                "{\n"
+                                "public:\n"
+                                "    ScanResult scan() override;\n"
+                                "};\n"};
+
+                            REQUIRE(result == expected_result);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     SECTION("Implementor is an empty class")
