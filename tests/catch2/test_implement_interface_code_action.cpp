@@ -653,10 +653,97 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
     SECTION("Does not add include if the interface already included")
     {
+        GIVEN("An interface")
+        {
+            std::string iface{
+                "#include <string>\n"
+                "#include <vector>\n"
+                "\n"
+                "struct Interface\n"
+                "{\n"
+                "    virtual void do_stuff() = 0;\n"
+                "};\n"};
+            directory_tree.create_file("interface.hpp", std::move(iface));
+
+            AND_GIVEN("An about-to-be implementor which has the interface header already included")
+            {
+                std::string struct_{
+                    "#include \"interface.hpp\"\n"
+                    "struct SomeStruct\n"
+                    "{\n"
+                    "};\n"};
+
+                WHEN("The implement interface code action is invoked")
+                {
+                    auto result{
+                        code_action.apply(RootDirectory{"temp"},
+                                          FileRecord{.path = working_root_dir / "implementor.hpp", .content = struct_},
+                                          InterfaceName{"Interface"},
+                                          CursorPositionLine{2})};
+
+                    THEN("The include stays as it is")
+                    {
+                        std::string expected_result{
+                            "#include \"interface.hpp\"\n"
+                            "struct SomeStruct : Interface\n"
+                            "{\n"
+                            "    void do_stuff() override;\n"
+                            "};\n"};
+
+                        REQUIRE(result == expected_result);
+                    }
+                }
+            }
+        }
     }
 
     SECTION("Does not add base class specifier if already exists")
     {
+        GIVEN("An interface")
+        {
+            std::string iface{
+                "#include <string>\n"
+                "#include <vector>\n"
+                "\n"
+                "struct Interface\n"
+                "{\n"
+                "    virtual void do_stuff() = 0;\n"
+                "};\n"};
+            directory_tree.create_file("interface.hpp", std::move(iface));
+
+            AND_GIVEN("An about-to-be implementor which has the base specifier already in place")
+            {
+                std::string struct_{
+                    "#include \"interface.hpp\"\n"
+                    "struct SomeStruct : Interface\n"
+                    "{\n"
+                    "};\n"};
+
+                WHEN("The implement interface code action is invoked")
+                {
+                    auto result{
+                        code_action.apply(RootDirectory{"temp"},
+                                          FileRecord{.path = working_root_dir / "implementor.hpp", .content = struct_},
+                                          InterfaceName{"Interface"},
+                                          CursorPositionLine{2})};
+
+                    THEN("The base-clause stays as it is")
+                    {
+                        std::string expected_result{
+                            "#include \"interface.hpp\"\n"
+                            "struct SomeStruct : Interface\n"
+                            "{\n"
+                            "    void do_stuff() override;\n"
+                            "};\n"};
+
+                        // FIXME: shall not expect 'include' to be in place. If there is no #include "interface.hpp"
+                        // then we get a compilation error, but even with the compilation error, we shall not duplicate
+                        // the base-specifier.
+                        REQUIRE(result == expected_result);
+                    }
+                }
+            }
+        }
     }
 
     SECTION("Error is raised when no class under cursor is found")
