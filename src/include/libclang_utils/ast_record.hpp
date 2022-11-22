@@ -14,8 +14,8 @@ namespace Tsepepe
 template<typename Node>
 struct ClangAstRecord
 {
-    const Node* node;
-    const clang::SourceManager* source_manager;
+    const Node* node{nullptr};
+    const clang::SourceManager* source_manager{nullptr};
 };
 
 using ClangClassRecord = ClangAstRecord<clang::CXXRecordDecl>;
