@@ -177,6 +177,8 @@ TEST_CASE("Base specifier is resolved", "[BaseSpecifierResolver]")
     auto base_class{ast_fixture.get_first_match<CXXRecordDecl>(base_class_matcher)};
 
     auto result{Tsepepe::resolve_base_specifier(
-        header_file_content, deriving_class, base_class, ast_fixture.get_source_manager())};
+        header_file_content,
+        Tsepepe::ClangClassRecord{.node = deriving_class, .source_manager = &ast_fixture.get_source_manager()},
+        base_class)};
     CHECK(result == expected_result);
 }

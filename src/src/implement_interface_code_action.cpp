@@ -70,7 +70,9 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_r
 
     auto include_code_insertion{get_include_statement_code_insertion(file_content, interface_declaration)};
     auto base_class_specifier_insertion{Tsepepe::resolve_base_specifier(
-        file_content, implementor_declaration, interface_declaration, ast_units.front()->getSourceManager())};
+        file_content,
+        ClangClassRecord{.node = implementor_declaration, .source_manager = &ast_units.front()->getSourceManager()},
+        interface_declaration)};
     auto overrides_insertion{
         get_overrides_code_insertion(file_content, implementor_declaration, interface_declaration)};
 

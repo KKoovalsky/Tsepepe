@@ -24,10 +24,12 @@ static bool is_already_deriving(const CXXRecordDecl* potentially_deriving_class,
 // Public stuff
 // --------------------------------------------------------------------------------------------------------------------
 CodeInsertionByOffset Tsepepe::resolve_base_specifier(const std::string& cpp_file_content,
-                                                      const clang::CXXRecordDecl* deriving_class,
-                                                      const clang::CXXRecordDecl* base_class,
-                                                      const clang::SourceManager& source_manager)
+                                                      ClangClassRecord deriving_class_record,
+                                                      const clang::CXXRecordDecl* base_class)
 {
+    const auto& deriving_class{deriving_class_record.node};
+    const auto& source_manager{*deriving_class_record.source_manager};
+
     if (is_already_deriving(deriving_class, base_class))
         return {};
 
