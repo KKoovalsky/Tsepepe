@@ -6,7 +6,6 @@
 #define BASE_SPECIFIER_RESOLVER_HPP
 
 #include <clang/AST/DeclCXX.h>
-#include <clang/Basic/SourceManager.h>
 
 #include "ast_record.hpp"
 #include "common_types.hpp"
