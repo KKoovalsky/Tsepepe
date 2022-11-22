@@ -127,8 +127,6 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::find_implementor(const FileRe
     auto class_matcher{
         ast_matchers::cxxRecordDecl(ast_matchers::hasDefinition(), isWithinFile(full_path_to_temp_file)).bind("class")};
     auto matches{ast_matchers::match(class_matcher, ast_unit.getASTContext())};
-    if (matches.empty())
-        return nullptr;
 
     const auto& source_manager{ast_unit.getSourceManager()};
     const CXXRecordDecl* result{nullptr};
