@@ -12,6 +12,7 @@ add_subdirectory(abstract_class_finder)
 add_subdirectory(pure_virtual_functions_extractor)
 add_subdirectory(suitable_place_in_class_finder)
 add_subdirectory(full_class_name_expander)
+add_subdirectory(implementor_maker)
 
 add_library(tsepepe_lib STATIC
     src/implement_interface_code_action.cpp
