@@ -28,6 +28,15 @@ struct FileRecord
     std::string content;
 };
 
+struct ImplementInterfaceCodeActionParameters
+{
+    std::filesystem::path root_directory;
+    std::filesystem::path source_file_path;
+    std::string source_file_content;
+    std::string inteface_name;
+    unsigned cursor_position_line;
+};
+
 class ImplementIntefaceCodeActionLibclangBased
 {
   public:

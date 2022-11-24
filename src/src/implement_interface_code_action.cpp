@@ -49,13 +49,6 @@ AST_MATCHER_P(CXXRecordDecl, isWithinFile, std::string, filename)
 // --------------------------------------------------------------------------------------------------------------------
 // Private helper types
 // --------------------------------------------------------------------------------------------------------------------
-struct ImplementInterfaceCodeActionParameters
-{
-    fs::path project_root;
-    const FileRecord& source_file;
-    std::string iface_name;
-    unsigned cursor_position_line;
-};
 
 namespace Tsepepe
 {
@@ -75,7 +68,7 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
 
     NewFileContent apply()
     {
-        const auto& file_content{parameters.source_file.content};
+        const auto& file_content{parameters.source_file_content};
 
         auto include_code_insertion{get_include_statement_code_insertion()};
         auto base_class_specifier_insertion{
@@ -89,7 +82,8 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
   private:
     ClangClassRecord find_implementor()
     {
-        auto full_path_to_temp_file{make_temporary_source_file(parameters.source_file)};
+        auto full_path_to_temp_file{
+            make_temporary_source_file(parameters.source_file_path, parameters.source_file_content)};
 
         ClangTool tool{*compilation_database, {full_path_to_temp_file.string()}};
         tool.buildASTs(ast_units);
@@ -130,10 +124,10 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
 
     ClangClassRecord find_interface()
     {
-        const auto& iface_name{parameters.iface_name};
+        const auto& iface_name{parameters.inteface_name};
         std::string class_definition_regex{"\\b(struct|class)\\s+" + iface_name + "\\b"};
         auto file_matches{
-            codebase_grep(RootDirectory(parameters.project_root), EcmaScriptPattern{class_definition_regex})};
+            codebase_grep(RootDirectory(parameters.root_directory), EcmaScriptPattern{class_definition_regex})};
 
         auto abstract_class_matcher{
             ast_matchers::cxxRecordDecl(isAbstract(), ast_matchers::hasName(iface_name)).bind("abstract class")};
@@ -166,7 +160,7 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
         if (is_include_already_in_place(interface_header_path))
             return {};
 
-        auto include_statement_place{Tsepepe::resolve_include_statement_place(parameters.source_file.content)};
+        auto include_statement_place{Tsepepe::resolve_include_statement_place(parameters.source_file_content)};
 
         std::string code{include_statement_place.is_newline_needed ? "\n" : ""};
         code += "#include \"" + fs::path(interface_header_path).filename().string() + "\"\n";
@@ -177,7 +171,7 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
     {
         const auto& header_filename{header_path.filename()};
         std::regex re{"#include\\s+\".*?" + header_filename.string() + "\""};
-        return std::regex_search(parameters.source_file.content, re);
+        return std::regex_search(parameters.source_file_content, re);
     }
 
     CodeInsertionByOffset get_overrides_code_insertion() const
@@ -190,7 +184,7 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
         auto method_overrides{Tsepepe::pure_virtual_functions_to_override_declarations(
             interface_.node, implementor_full_name, *interface_.source_manager)};
         auto method_overrides_place{Tsepepe::find_suitable_place_in_class_for_public_method(
-            parameters.source_file.content, implementor.node, *implementor.source_manager)};
+            parameters.source_file_content, implementor.node, *implementor.source_manager)};
 
         std::string code{method_overrides_place.is_public_section_needed ? "public:\n" : ""};
         for (auto& override_ : method_overrides)
@@ -202,20 +196,20 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
         return {.code = std::move(code), .offset = method_overrides_place.offset};
     }
 
-    fs::path make_temporary_source_file(const FileRecord& file)
+    fs::path make_temporary_source_file(const fs::path& path, const std::string& file_content)
     {
         fs::path temp_file_path;
-        if (not fs::is_directory(file.path))
+        if (not fs::is_directory(path))
         {
             // Assume is the path is a path to a file.
-            std::string fname{".tsepepe_" + file.path.filename().string()};
-            temp_file_path = file.path.parent_path() / std::move(fname);
+            std::string fname{".tsepepe_" + path.filename().string()};
+            temp_file_path = path.parent_path() / std::move(fname);
         } else
         {
-            temp_file_path = file.path / ".tsepepe_implementor_temp.hpp";
+            temp_file_path = path / ".tsepepe_implementor_temp.hpp";
         }
 
-        return this_code_action_directory_tree.create_file(std::move(temp_file_path), file.content);
+        return this_code_action_directory_tree.create_file(std::move(temp_file_path), file_content);
     }
 
     std::shared_ptr<CompilationDatabase> compilation_database;
@@ -247,9 +241,10 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_r
                                                          CursorPositionLine cursor_position_line)
 {
     return ImplementIntefaceCodeActionLibclangBasedImpl{compilation_database,
-                                                        {.project_root = project_root.get(),
-                                                         .source_file = source_file,
-                                                         .iface_name = iface_name.get(),
+                                                        {.root_directory = project_root.get(),
+                                                         .source_file_path = source_file.path,
+                                                         .source_file_content = source_file.content,
+                                                         .inteface_name = iface_name.get(),
                                                          .cursor_position_line = cursor_position_line.get()}}
         .apply();
 }
