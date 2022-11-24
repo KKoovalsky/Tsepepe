@@ -235,18 +235,9 @@ Tsepepe::ImplementIntefaceCodeActionLibclangBased::ImplementIntefaceCodeActionLi
 }
 
 Tsepepe::NewFileContent
-Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(RootDirectory project_root,
-                                                         const FileRecord& source_file,
-                                                         InterfaceName iface_name,
-                                                         CursorPositionLine cursor_position_line)
+Tsepepe::ImplementIntefaceCodeActionLibclangBased::apply(ImplementInterfaceCodeActionParameters params)
 {
-    return ImplementIntefaceCodeActionLibclangBasedImpl{compilation_database,
-                                                        {.root_directory = project_root.get(),
-                                                         .source_file_path = source_file.path,
-                                                         .source_file_content = source_file.content,
-                                                         .inteface_name = iface_name.get(),
-                                                         .cursor_position_line = cursor_position_line.get()}}
-        .apply();
+    return ImplementIntefaceCodeActionLibclangBasedImpl{compilation_database, std::move(params)}.apply();
 }
 
 // --------------------------------------------------------------------------------------------------------------------

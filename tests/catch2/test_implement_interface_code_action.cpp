@@ -13,6 +13,7 @@
 #include "implement_interface_code_action.hpp"
 
 using namespace Tsepepe;
+namespace fs = std::filesystem;
 
 TEST_CASE("Generate code that makes a class implement an interface", "[ImplementInterfaceCodeAction]")
 {
@@ -50,10 +51,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                 WHEN("Implement interface code action is invoked")
                 {
                     unsigned cursor_position_line = GENERATE(1, 2, 3);
-                    auto result{code_action.apply(RootDirectory{"temp"},
-                                                  FileRecord{.path = working_root_dir, .content = class_def},
-                                                  InterfaceName{"Runnable"},
-                                                  CursorPositionLine{cursor_position_line})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir,
+                                                   .source_file_content = class_def,
+                                                   .inteface_name = "Runnable",
+                                                   .cursor_position_line = cursor_position_line})};
 
                     THEN("New file content is returned")
                     {
@@ -111,10 +113,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                         WHEN("The compound interface is requested to be implemented")
                         {
                             unsigned cursor_position_line = GENERATE(1, 2, 3);
-                            auto result{code_action.apply(RootDirectory{"temp"},
-                                                          FileRecord{.path = working_root_dir, .content = class_def},
-                                                          InterfaceName{"RunnableAndPrintable"},
-                                                          CursorPositionLine{cursor_position_line})};
+                            auto result{code_action.apply({.root_directory = "temp",
+                                                           .source_file_path = working_root_dir,
+                                                           .source_file_content = class_def,
+                                                           .inteface_name = "RunnableAndPrintable",
+                                                           .cursor_position_line = cursor_position_line})};
 
                             THEN("The class definition implements the compound interface")
                             {
@@ -220,10 +223,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                 {
                     // FIXME: shall work for the line 25 as well (range() generates a range: [13, 25) )!
                     unsigned cursor_position_line = GENERATE(range(13, 25));
-                    auto result{code_action.apply(RootDirectory{"temp"},
-                                                  FileRecord{.path = working_root_dir, .content = class_def},
-                                                  InterfaceName{"Logger"},
-                                                  CursorPositionLine{cursor_position_line})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir,
+                                                   .source_file_content = class_def,
+                                                   .inteface_name = "Logger",
+                                                   .cursor_position_line = cursor_position_line})};
 
                     THEN("The class definition implements the compound interface")
                     {
@@ -308,10 +312,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
                 WHEN("The interface is requested to be implemented")
                 {
-                    auto result{code_action.apply(RootDirectory{"temp"},
-                                                  FileRecord{.path = working_root_dir, .content = class_def},
-                                                  InterfaceName{"Logger"},
-                                                  CursorPositionLine{1})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir,
+                                                   .source_file_content = class_def,
+                                                   .inteface_name = "Logger",
+                                                   .cursor_position_line = 1})};
 
                     THEN("The nested type is properly scope-shortened")
                     {
@@ -359,10 +364,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
                 WHEN("The interface is requested to be implemented")
                 {
-                    auto result{code_action.apply(RootDirectory{"temp"},
-                                                  FileRecord{.path = working_root_dir, .content = class_def},
-                                                  InterfaceName{"Scanner"},
-                                                  CursorPositionLine{5})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir,
+                                                   .source_file_content = class_def,
+                                                   .inteface_name = "Scanner",
+                                                   .cursor_position_line = 5})};
 
                     THEN("The types are properly resolved")
                     {
@@ -386,16 +392,19 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
     SECTION("Error when interface not found")
     {
-        std::string class_def{"struct Yolo {};\n"};
-        REQUIRE_THROWS_AS(code_action.apply(RootDirectory{"temp"},
-                                            FileRecord{.path = working_root_dir, .content = class_def},
-                                            InterfaceName{"Scanner"},
-                                            CursorPositionLine{1}),
-                          Tsepepe::BaseError);
-        REQUIRE_THROWS_WITH(code_action.apply(RootDirectory{"temp"},
-                                              FileRecord{.path = working_root_dir, .content = class_def},
-                                              InterfaceName{"Scanner"},
-                                              CursorPositionLine{1}),
+        auto do_apply{[&]() {
+            std::string class_def{"struct Yolo {};\n"};
+            code_action.apply({.root_directory = "temp",
+                               .source_file_path = working_root_dir,
+                               .source_file_content = class_def,
+                               .inteface_name = "Scanner",
+                               .cursor_position_line = 1}
+
+            );
+        }};
+
+        REQUIRE_THROWS_AS(do_apply(), Tsepepe::BaseError);
+        REQUIRE_THROWS_WITH(do_apply(),
                             Catch::Matchers::ContainsSubstring("interface")
                                 and Catch::Matchers::ContainsSubstring("found"));
     }
@@ -412,16 +421,19 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
             "};\n"};
         directory_tree.create_file("scanner.hpp", std::move(iface));
 
-        std::string class_def{"struct Yolo {};\n"};
-        REQUIRE_THROWS_AS(code_action.apply(RootDirectory{"temp"},
-                                            FileRecord{.path = working_root_dir, .content = class_def},
-                                            InterfaceName{"Scanner"},
-                                            CursorPositionLine{1}),
-                          Tsepepe::BaseError);
-        REQUIRE_THROWS_WITH(code_action.apply(RootDirectory{"temp"},
-                                              FileRecord{.path = working_root_dir, .content = class_def},
-                                              InterfaceName{"Scanner"},
-                                              CursorPositionLine{1}),
+        auto do_apply{[&]() {
+            std::string class_def{"struct Yolo {};\n"};
+            code_action.apply({.root_directory = "temp",
+                               .source_file_path = working_root_dir,
+                               .source_file_content = class_def,
+                               .inteface_name = "Scanner",
+                               .cursor_position_line = 1}
+
+            );
+        }};
+
+        REQUIRE_THROWS_AS(do_apply(), Tsepepe::BaseError);
+        REQUIRE_THROWS_WITH(do_apply(),
                             Catch::Matchers::ContainsSubstring("interface")
                                 and Catch::Matchers::ContainsSubstring("found"));
     }
@@ -460,10 +472,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
                     WHEN("The interface is being implemented")
                     {
-                        auto result{code_action.apply(RootDirectory{"temp"},
-                                                      FileRecord{.path = working_root_dir, .content = class_def},
-                                                      InterfaceName{"Scanner"},
-                                                      CursorPositionLine{4})};
+                        auto result{code_action.apply({.root_directory = "temp",
+                                                       .source_file_path = working_root_dir,
+                                                       .source_file_content = class_def,
+                                                       .inteface_name = "Scanner",
+                                                       .cursor_position_line = 4})};
 
                         THEN("The base-clause is properly extended")
                         {
@@ -510,21 +523,24 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
                 AND_GIVEN("A class which is nested deeply in another directory")
                 {
-                    FileRecord file{.path = working_root_dir / "include" / "lib" / "real" / "implementor"
-                                            / "implementor.hpp",
-                                    .content =
-                                        "#include \"yolo/others.hpp\"\n"
-                                        "\n"
-                                        "class Implementor : public One,\n"
-                                        "                    public Two,\n"
-                                        "                    public Three\n"
-                                        "{\n"
-                                        "};\n"};
+                    fs::path file_path{working_root_dir / "include" / "lib" / "real" / "implementor"
+                                       / "implementor.hpp"};
+                    std::string file_content{
+                        "#include \"yolo/others.hpp\"\n"
+                        "\n"
+                        "class Implementor : public One,\n"
+                        "                    public Two,\n"
+                        "                    public Three\n"
+                        "{\n"
+                        "};\n"};
 
                     WHEN("The interface is being implemented")
                     {
-                        auto result{code_action.apply(
-                            RootDirectory{"temp"}, file, InterfaceName{"Scanner"}, CursorPositionLine{4})};
+                        auto result{code_action.apply({.root_directory = "temp",
+                                                       .source_file_path = file_path,
+                                                       .source_file_content = file_content,
+                                                       .inteface_name = "Scanner",
+                                                       .cursor_position_line = 4})};
 
                         THEN("No errors related to inclusion occurr")
                         {
@@ -566,11 +582,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
                 WHEN("The bare class is going to implement the interface")
                 {
-                    auto result{code_action.apply(
-                        RootDirectory{"temp"},
-                        FileRecord{.path = working_root_dir / "implementor.hpp", .content = class_def},
-                        InterfaceName{"Scanner"},
-                        CursorPositionLine{1})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir / "implementor.hpp",
+                                                   .source_file_content = class_def,
+                                                   .inteface_name = "Scanner",
+                                                   .cursor_position_line = 1})};
 
                     THEN("The class is properly extended")
                     {
@@ -619,11 +635,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
                 WHEN("The implement interface code action is invoked")
                 {
-                    auto result{
-                        code_action.apply(RootDirectory{"temp"},
-                                          FileRecord{.path = working_root_dir / "implementor.hpp", .content = struct_},
-                                          InterfaceName{"Interface"},
-                                          CursorPositionLine{8})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir / "implementor.hpp",
+                                                   .source_file_content = struct_,
+                                                   .inteface_name = "Interface",
+                                                   .cursor_position_line = 8})};
 
                     THEN("The struct is properly extended")
                     {
@@ -675,11 +691,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
                 WHEN("The implement interface code action is invoked")
                 {
-                    auto result{
-                        code_action.apply(RootDirectory{"temp"},
-                                          FileRecord{.path = working_root_dir / "implementor.hpp", .content = struct_},
-                                          InterfaceName{"Interface"},
-                                          CursorPositionLine{2})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir / "implementor.hpp",
+                                                   .source_file_content = struct_,
+                                                   .inteface_name = "Interface",
+                                                   .cursor_position_line = 2})};
 
                     THEN("The include stays as it is")
                     {
@@ -721,11 +737,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
 
                 WHEN("The implement interface code action is invoked")
                 {
-                    auto result{
-                        code_action.apply(RootDirectory{"temp"},
-                                          FileRecord{.path = working_root_dir / "implementor.hpp", .content = struct_},
-                                          InterfaceName{"Interface"},
-                                          CursorPositionLine{2})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir / "implementor.hpp",
+                                                   .source_file_content = struct_,
+                                                   .inteface_name = "Interface",
+                                                   .cursor_position_line = 2})};
 
                     THEN("The base-clause stays as it is")
                     {
@@ -782,11 +798,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                     THEN("An error is raised")
                     {
                         auto do_apply{[&]() {
-                            code_action.apply(
-                                RootDirectory{"temp"},
-                                FileRecord{.path = working_root_dir / "implementor.hpp", .content = struct_},
-                                InterfaceName{"Interface"},
-                                CursorPositionLine{line});
+                            code_action.apply({.root_directory = "temp",
+                                               .source_file_path = working_root_dir / "implementor.hpp",
+                                               .source_file_content = struct_,
+                                               .inteface_name = "Interface",
+                                               .cursor_position_line = line});
                         }};
 
                         REQUIRE_THROWS_AS(do_apply(), Tsepepe::BaseError);
@@ -833,11 +849,11 @@ TEST_CASE("Generate code that makes a class implement an interface", "[Implement
                 {
                     // FIXME: shall work for '10' as well.
                     unsigned line = GENERATE(values({5, 6}));
-                    auto result{
-                        code_action.apply(RootDirectory{"temp"},
-                                          FileRecord{.path = working_root_dir / "implementor.hpp", .content = structs},
-                                          InterfaceName{"Interface"},
-                                          CursorPositionLine{line})};
+                    auto result{code_action.apply({.root_directory = "temp",
+                                                   .source_file_path = working_root_dir / "implementor.hpp",
+                                                   .source_file_content = structs,
+                                                   .inteface_name = "Interface",
+                                                   .cursor_position_line = line})};
 
                     THEN("The almost most deeply nested struct is extended")
                     {

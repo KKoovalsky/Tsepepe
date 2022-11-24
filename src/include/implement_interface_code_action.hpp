@@ -17,16 +17,7 @@
 namespace Tsepepe
 {
 
-using FileContent = fluent::NamedType<std::string, struct FileContentTag>;
 using NewFileContent = std::string;
-using InterfaceName = fluent::NamedType<std::string, struct InterfaceNameTag>;
-using CursorPositionLine = fluent::NamedType<unsigned, struct CursorPositionLineTag>;
-
-struct FileRecord
-{
-    std::filesystem::path path;
-    std::string content;
-};
 
 struct ImplementInterfaceCodeActionParameters
 {
@@ -42,9 +33,7 @@ class ImplementIntefaceCodeActionLibclangBased
   public:
     explicit ImplementIntefaceCodeActionLibclangBased(std::shared_ptr<clang::tooling::CompilationDatabase>);
 
-    // FIXME: Use ImplementInterfaceCodeActionParameters{.root, .source_file_path, .source_file_content (get rid of
-    // FileRecord), .interface_name, .cursor_position_line}
-    NewFileContent apply(RootDirectory, const FileRecord&, InterfaceName, CursorPositionLine);
+    NewFileContent apply(ImplementInterfaceCodeActionParameters);
 
   private:
     std::shared_ptr<clang::tooling::CompilationDatabase> compilation_database;
