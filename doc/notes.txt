@@ -1,0 +1,9 @@
+Content-Length: 327
+
+{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"capabilities":{"textDocument":{"codeAction":{"codeActionLiteralSupport":{"codeActionKind":{"valueSet":["","quickfix","refactor","refactor.extract","refactor.inline","refactor.rewrite","refactor.implement.interface","source","source.organizeImports"]}}}}},"trace":"off"}}
+
+---
+
+Content-Length: 327
+
+{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"capabilities":{"textDocument":{"codeAction":{"codeActionLiteralSupport":{"codeActionKind":{"valueSet":["","quickfix","refactor","refactor.extract","refactor.inline","refactor.rewrite","refactor.implement.interface","source","source.organizeImports"]}}}}},"trace":"off"}}
