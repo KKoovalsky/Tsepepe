@@ -8,11 +8,7 @@
 #include <filesystem>
 #include <string>
 
-#include <NamedType/named_type.hpp>
-
 #include <clang/Tooling/CompilationDatabase.h>
-
-#include "common_types.hpp"
 
 namespace Tsepepe
 {
