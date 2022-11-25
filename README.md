@@ -197,9 +197,10 @@ tsepepe_implementor maker                                               \
     <line number where the cursor is located within the file with the potential implementor>
 ```
 
-Example:
+**Example:**
 
-Having a project under path <PROJECT_ROOT>, and an interface defined within a file 'src/include/yolo_interface.hpp', with content:
+Having a project under path `<PROJECT_ROOT>`, and an interface defined within a file `src/include/yolo_interface.hpp`,
+with content:
 
     namespace Tsepepe
     {
