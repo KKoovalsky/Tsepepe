@@ -11,6 +11,8 @@ A collection of C++ refactoring tools (WIP), provided as binaries.
 with views)
 * CMake 3.22
 * `libclang-14-dev` and `libllvm-14-dev`
+* `liboost-1.74`+
+* `ripgrep`
 
 ## Building and installing
 
