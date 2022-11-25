@@ -78,9 +78,9 @@ name and the return type, which might be a custom type.
 
 Invoke it like that:
 ```
-tsepepe_paired_cpp_file_finder                                  \
-    <project root directory>                                    \
-    <path to the C++ for which the paired file will be found>
+tsepepe_paired_cpp_file_finder                                          \
+    <project root directory>                                            \
+    <path to the C++ file for which the paired file will be found>
 ```
 
 Tries to find a corresponding (paired) C++ file for the project found under the specified root.
@@ -170,6 +170,62 @@ The result outputted to stdout is:
     /root/dir/to/project/some_dir1/foo.hpp
 
 ### Implementor maker
+
+Makes a class/struct implementor of an interface, with the name that is provided as a parameter. 
+The project's C++ source and header files are traversed to find the interface with the specified name. 
+The line number of the current cursor position is used to find the potential implementor of the interface. Thus it 
+means, that the current cursor position must be within the potential implementor body.
+Takes also the entire file content as a parameter, and returns the new file content, with all the pieces of code added 
+that make the class/struct the implementor of the interface, what means that:
+
+* the proper `#include` statement is added,
+* the base-clause is created, or extended, with the interface qualified name,
+* the pure virtual functions are put to the class body, marked `override`.
+
+The code shall properly compile after the applying the changes. The only exception is that the 
+`#include "<path>"` is not validated. The filename, where the interface is defined, is put as `<path>`. It might be
+that manual adjustment is needed, to properly resolve the include path, to avoid `file not found` error.
+
+Invoke it like that:
+```
+tsepepe_implementor maker                                               \
+    <project root directory>                                            \
+    <path to directory with compilation database>                       \
+    <path to the C++ file which will contain the implementor>           \
+    <content of the C++ file which will contain the implementor>        \
+    <the interface name>                                                \
+    <line number where the cursor is located within the file with the potential implementor>
+```
+
+Example:
+
+Having a project under path <PROJECT_ROOT>, and an interface defined within a file 'src/include/yolo_interface.hpp', with content:
+
+    namespace Tsepepe
+    {
+    struct YoloInterface
+    {
+        virtual void do_stuff() = 0;
+        virtual ~YoloInterface() = default;
+    };
+    } // namespace Tsepepe
+
+When the tool is called like that:
+
+    tsepepe_implementor_maker
+            <PROJECT_ROOT>/build               # The path to the directory with the compile_commands.json
+            <PROJECT_ROOT>                     # The project root directory
+            <PROJECT_ROOT>/src/implementor.hpp # Path to the file with the potential implementor
+            'struct Implementor { };'          # The source file content
+            YoloInterface                      # The inteface name.
+            1                                  # The first line contains the Implementor definition.
+
+The output will be:
+
+    #include "yolo_interface.hpp"
+    struct Implementor : Tsepepe::YoloInterface {
+        void do_stuff() override;
+    };
 
 ## Testing
 
