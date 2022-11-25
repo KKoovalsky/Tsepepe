@@ -1,5 +1,3 @@
-find_program(RIPGREP rg REQUIRED)
-
 find_package(Boost 1.74 REQUIRED COMPONENTS headers)
 ProvideRangesV3()
 ProvideNamedType()
