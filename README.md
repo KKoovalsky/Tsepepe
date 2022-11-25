@@ -4,6 +4,7 @@ A collection of C++ refactoring tools (WIP), provided as binaries.
 
 - [Function definition generator](#function-definition-generator).
 - [Paired C++ file finder](#paired-c++-file-finder)
+- [Implementor maker](#implementor-maker)
 
 # Build requirements
 
@@ -168,6 +169,7 @@ The result outputted to stdout is:
 
     /root/dir/to/project/some_dir1/foo.hpp
 
+### Implementor maker
 
 ## Testing
 
@@ -177,12 +179,18 @@ Requirements:
 2. Install `bear` tool.
 3. `cucumber` command line tool. On Ubuntu can be installed with `apt`. It is a ruby tool, thus `gem` can also be used
 for that.
+4. `catch2` C++ testing library, version 3+.
 
 Run:
 
 ```
 cmake -DTSEPEPE_ENABLE_TESTING=ON ..
-cmake --build . && ctest
+cmake --build . && ctest -LE long_running       # Will skip leak checking, which takes few minutes with valgrind.
+```
+
+To run all the tests, with leak checking included:
+```
+ctest
 ```
 
 The tests are written in Gherkin, driven by `behave`.
