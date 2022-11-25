@@ -86,7 +86,7 @@ tsepepe_paired_cpp_file_finder                                  \
 Tries to find a corresponding (paired) C++ file for the project found under the specified root.
 Paired C++ files are files with the same stem, e.g.: _some\_file.cpp/some\_file.hpp_.
 
-**Note:** The input C++ file must be in located in the child directory of the project root. The path may be absolute,
+**Note:** The input C++ file must be located in the child directory of the project root. The path may be absolute,
 or relative to the project root directory.
 
 If the input file is a header file, then source file is tried to be found. Otherwise, if the input file is a source 
