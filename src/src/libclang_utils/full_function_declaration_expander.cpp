@@ -118,11 +118,9 @@ struct Expander
 
     std::string stringify_template_specialization(const TemplateSpecializationType* template_spec_type) const
     {
+        const auto& ast_context{template_spec_type->getAsRecordDecl()->getASTContext()};
         auto template_arg_to_string{[&](const TemplateArgument& template_arg) {
-            std::string s;
-            llvm::raw_string_ostream os{s};
-            template_arg.print(printing_policy, os, true);
-            return s;
+            return type_to_string(template_arg.getAsType(), ast_context);
         }};
 
         std::string result;
