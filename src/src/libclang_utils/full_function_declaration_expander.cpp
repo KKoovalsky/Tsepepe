@@ -18,30 +18,13 @@
 #include <clang/Lex/Lexer.h>
 
 #include "libclang_utils/misc_utils.hpp"
+#include "string_utils.hpp"
 
 using namespace clang;
 
 // --------------------------------------------------------------------------------------------------------------------
-// Templates
-// --------------------------------------------------------------------------------------------------------------------
-template<typename BegIt, typename EndIt>
-static std::string join(BegIt begin, EndIt end, std::string delim)
-{
-    if (begin == end)
-        return "";
-
-    std::string init{*begin};
-    init.reserve(120);
-    return std::accumulate(
-        std::next(begin), end, std::move(init), [&delim](std::string result, const std::string& elem) {
-            return std::move(result) + delim + elem;
-        });
-}
-
-// --------------------------------------------------------------------------------------------------------------------
 // Private declarations
 // --------------------------------------------------------------------------------------------------------------------
-static std::string join(const std::vector<std::string>& string_vec, std::string delim = ", ");
 
 // --------------------------------------------------------------------------------------------------------------------
 // Private helper types
@@ -77,7 +60,7 @@ struct Expander
 
         auto [end, _] = std::ranges::remove_if(result_parted, [](const auto& s) { return s.empty(); });
         auto begin{std::begin(result_parted)};
-        return join(begin, end, " ");
+        return Tsepepe::utils::join(begin, end, " ");
     }
 
   private:
@@ -99,7 +82,7 @@ struct Expander
             }
         }
 
-        return join(standard_attributes_as_strings, " ");
+        return Tsepepe::utils::join(standard_attributes_as_strings, " ");
     }
 
     std::string get_return_type(const FunctionDecl* node) const
@@ -136,7 +119,7 @@ struct Expander
         template_args_as_string.reserve(template_args.size());
         std::ranges::transform(template_args, std::back_inserter(template_args_as_string), template_arg_to_string);
 
-        os << '<' << join(template_args_as_string) << '>';
+        os << '<' << Tsepepe::utils::join(template_args_as_string) << '>';
 
         return result;
     }
@@ -159,7 +142,7 @@ struct Expander
         params_as_string.reserve(params.size());
         std::ranges::transform(params, std::back_inserter(params_as_string), param_to_string);
 
-        return '(' + join(params_as_string) + ')';
+        return '(' + Tsepepe::utils::join(params_as_string) + ')';
     }
 
     std::string get_ref_qualifier(const CXXMethodDecl* node) const
@@ -224,8 +207,3 @@ std::string Tsepepe::fully_expand_function_declaration(const FunctionDecl* funct
 // --------------------------------------------------------------------------------------------------------------------
 // Private definitions
 // --------------------------------------------------------------------------------------------------------------------
-static std::string join(const std::vector<std::string>& string_vec, std::string delim)
-{
-    return join(std::begin(string_vec), std::end(string_vec), std::move(delim));
-}
-
