@@ -197,6 +197,33 @@ TEST_CASE("Multiple function definitions are generated at once", "[FunctionDefin
                          "std::string Basta::to_string(std::vector<Basta::Baz>)\n"
                          "{\n"
                          "}\n"},
+            TestData{.description = "Prints out an empty string if no declaration found within the selected range",
+                     .header_file_content = "/**\n"
+                                            " * @file        test_multiple_function_definitions_generator.cpp\n"
+                                            " * @brief\n"
+                                            " */\n"
+                                            "#ifndef TEST_MULTIPLE_FUNCTION_DEFINITIONS_GENERATOR_CPP\n"
+                                            "#define TEST_MULTIPLE_FUNCTION_DEFINITIONS_GENERATOR_CPP\n"
+                                            "\n"
+                                            "#include <string>\n"
+                                            "#include <vector>\n"
+                                            "#include <utility>\n"
+                                            "\n"
+                                            "struct Bar{};\n"
+                                            "\n"
+                                            "namespace Basta\n"
+                                            "{\n"
+                                            "\n"
+                                            "struct Baz{};\n"
+                                            "\n"
+                                            "std::pair<Bar, Baz> gimme(std::vector<std::pair<std::string, Baz>>);\n"
+                                            "inline void foo() {}\n"
+                                            "std::string to_string(std::vector<Baz>);\n"
+                                            "}\n"
+                                            "#endif /* TEST_MULTIPLE_FUNCTION_DEFINITIONS_GENERATOR_CPP */\n",
+                     .selected_line_begin = 13,
+                     .selected_line_end = 14,
+                     .expected_result = ""},
         };
 
         auto [description, header_file_content, selected_line_begin, selected_line_end, expected_result] =

@@ -59,6 +59,8 @@ std::string Tsepepe::GenerateFunctionDefinitionsCodeActionLibclangBased::apply(
                                             isWithinLines({params.selected_line_begin, params.selected_line_end}))
                      .bind("function")};
     auto matches{ast_matchers::match(matcher, ast_unit.getASTContext())};
+    if (matches.empty())
+        return "";
 
     std::vector<std::string> result_parted;
     auto number_of_potential_declarations(params.selected_line_end - params.selected_line_begin + 1);
