@@ -1,161 +1,105 @@
 /**
  * @file	cmd_parser.cpp
- * @brief	Defines the DefinitionGeneratorCmdParser.
+ * @brief	Implements command parsing for the function definition generator.
  */
-
-#include <cstring>
 #include <filesystem>
 #include <iostream>
-#include <stdexcept>
 
 #include "cmd_parser.hpp"
 
+#include "clang_ast_utils.hpp"
+#include "cmd_utils.hpp"
+#include "error.hpp"
+#include "filesystem_utils.hpp"
+
 namespace fs = std::filesystem;
 
-namespace Tsepepe
+// --------------------------------------------------------------------------------------------------------------------
+// Private declarations
+// --------------------------------------------------------------------------------------------------------------------
+static void print_usage(int argc, const char** argv);
+static fs::path parse_and_validate_temporary_file_path(const char*);
+
+// --------------------------------------------------------------------------------------------------------------------
+// Public stuff
+// --------------------------------------------------------------------------------------------------------------------
+namespace Tsepepe::FunctionDefinitionGenerator
 {
 
-DefinitionGeneratorCmdParser::DefinitionGeneratorCmdParser(int argc, const char** argv) : status{validate(argc, argv)}
+std::variant<Input, ReturnCode> parse_cmd(int argc, const char** argv)
 {
-    if (not status.can_continue)
-        return;
-
-    declaration_location =
-        FunctionDeclarationLocation{.file = argv[2], .line = static_cast<unsigned>(std::stoul(argv[3]))};
-
-    std::string err;
-    compilation_database_ptr = clang::tooling::CompilationDatabase::loadFromDirectory(argv[1], err);
-    if (!compilation_database_ptr)
+    if (Tsepepe::utils::cmd::is_command_help_requested(argc, argv))
     {
-        status = {.can_continue = false, .return_code = 1};
-        err_stream << "ERROR: clang::tooling::CompilationDatabase" << err << std::endl;
+        print_usage(argc, argv);
+        return ReturnCode{0};
     }
-}
 
-DefinitionGeneratorCmdParser::Status DefinitionGeneratorCmdParser::validate(int argc, const char** argv)
-{
-    if (is_help_requested(argc, argv))
+    if (argc != 5 and argc != 6)
     {
-        print_usage(argv[0]);
-        return {.can_continue = false, .return_code = 0};
+        std::cerr << "ERROR: Wrong number of arguments provided!\n" << std::endl;
+        print_usage(argc, argv);
+        return ReturnCode{1};
     }
 
     try
     {
-        validate_argument_number(argc, argv);
-        validate_compilation_database_path(argv[1]);
-        validate_source_file_exists(argv[2]);
-        validate_line_number_is_numeric(argv[3]);
-    } catch (const ArgumentError& e)
-    {
-        err_stream << e.what() << "\n" << std::endl;
-        print_usage(argv[0]);
-        return {.can_continue = false, .return_code = 1};
-    } catch (const ValueError& e)
-    {
-        err_stream << e.what() << "\n" << std::endl;
-        return {.can_continue = false, .return_code = 1};
-    }
+        Input result;
+        result.compilation_database_ptr = Tsepepe::utils::clang_ast::parse_compilation_database(argv[1]);
 
-    return {.can_continue = true, .return_code = 0};
-}
+        GenerateFunctionDefinitionsCodeActionParameters params;
+        params.source_file_path = parse_and_validate_temporary_file_path(argv[2]);
+        params.source_file_content = argv[3];
+        params.selected_line_begin = Tsepepe::utils::cmd::parse_and_validate_number(argv[4]);
+        if (argc == 6)
+            params.selected_line_end = Tsepepe::utils::cmd::parse_and_validate_number(argv[5]);
+        else
+            params.selected_line_end = params.selected_line_begin;
 
-void DefinitionGeneratorCmdParser::validate_argument_number(int argc, const char**)
-{
-    if (argc != 4)
+        result.parameters = std::move(params);
+        return result;
+    } catch (const Tsepepe::Error& e)
     {
-        throw ArgumentError{"ERROR: wrong number of arguments specified!"};
+        std::cerr << "ERROR: " << e.what() << std::endl;
+        return ReturnCode{1};
     }
 }
 
-void DefinitionGeneratorCmdParser::validate_compilation_database_path(const char* path_to_compile_db)
-{
-    if (not fs::exists(path_to_compile_db))
-    {
-        std::string msg;
-        msg.append("ERROR: Path to the compilation database: ");
-        msg.append(path_to_compile_db);
-        msg.append(" does not exist!");
-        throw ValueError{std::move(msg)};
-    }
+} // namespace Tsepepe::FunctionDefinitionGenerator
 
-    auto comp_db_path{fs::path(path_to_compile_db).append("compile_commands.json")};
-    if (not fs::exists(comp_db_path))
-    {
-        std::string msg;
-        msg.append("ERROR: Directory: ");
-        msg.append(path_to_compile_db);
-        msg.append(" does not contain a compilation database (compile_commands.json)!");
-        throw ValueError{std::move(msg)};
-    }
+// --------------------------------------------------------------------------------------------------------------------
+// Private definitions
+// --------------------------------------------------------------------------------------------------------------------
+static void print_usage(int argc, const char** argv)
+{
+    auto program_path{argv[0]};
+    std::cout << "USAGE:\n\t" << program_path
+              << " COMP_DB_DIR"
+                 " SOURCE_FILE_PATH"
+                 " SOURCE_FILE_CONTENT"
+                 " CURSOR_POSITION_LINE_BEGIN"
+                 " [CURSOR_POSITION_LINE_END]"
+                 " \n\n";
+    std::cout << "DESCRIPTION:"
+                 "\n\tTakes the entire source file (SOURCE_FILE_CONTENT) and generates function definitions"
+                 "\n\tfor each function declaration which can be found in the range of lines"
+                 "\n\t<CURSOR_POSITION_LINE_BEGIN; CURSOR_POSITION_LINE_END>. The CURSOR_POSITION_LINE_END is"
+                 "\n\toptional. When it is not set, then the definition for a declaration found at"
+                 "\n\tCURSOR_POSITION_LINE_BEGIN will only be generated."
+                 "\n\n\tThe path to the source file (SOURCE_FILE_PATH) is needed to properly resolve the includes,"
+                 "\n\tthat might be found within the source file. The content of the file must be supplied as is"
+                 "\n\twith the SOURCE_FILE_CONTENT parameter. Ideally, the newline separator should be '\\n 'character."
+                 "\n\n\tWe need the path to the directory containing compile_commands.json as well,"
+                 "\n\twhich shall be supplied with COMP_DB_DIR parameter."
+                 "\n\n"
+              << std::endl;
 }
 
-void DefinitionGeneratorCmdParser::validate_source_file_exists(const char* path_to_source_file)
+static fs::path parse_and_validate_temporary_file_path(const char* path_raw)
 {
-    if (not fs::exists(path_to_source_file))
-    {
-        std::string msg;
-        msg.append("ERROR: Source file: ");
-        msg.append(path_to_source_file);
-        msg.append(" does not exist!");
-        throw ValueError{std::move(msg)};
-    }
+    fs::path path{path_raw};
+    fs::path parent_path{path.has_filename() ? path.parent_path() : path};
+    if (not fs::exists(parent_path))
+        throw Tsepepe::Error{"Parent path: " + parent_path.string() + " of the path: " + path.string()
+                             + " does not exist!"};
+    return path;
 }
-
-void DefinitionGeneratorCmdParser::validate_line_number_is_numeric(const char* line_number_str)
-{
-    auto ptr{line_number_str};
-    while (*ptr != '\0')
-    {
-        if (not std::isdigit(*ptr++))
-        {
-            std::string msg;
-            throw ValueError{"ERROR: Line number must be a positive number!"};
-        }
-    }
-}
-
-bool DefinitionGeneratorCmdParser::is_help_requested(int argc, const char** argv)
-{
-    for (int i{1}; i < argc; ++i)
-        if (std::strcmp(argv[i], "--help") == 0 or std::strcmp(argv[i], "-h") == 0)
-            return true;
-    return false;
-}
-
-void DefinitionGeneratorCmdParser::print_usage(const char* program_path)
-{
-    out_stream << "USAGE:\n\t" << program_path << " COMP_DB_DIR SOURCE_FILE DECL_LINE\n\n";
-    out_stream << "DESCRIPTION:\n\tGenerates function definition from a declaration found in the SOURCE_FILE at line "
-                  "DECL_LINE."
-               << std::endl;
-    out_stream << "\tNeeds the compilation database that can be found under the COMP_DB_DIR directory." << std::endl;
-}
-
-DefinitionGeneratorCmdParser::operator bool() const noexcept
-{
-    return status.can_continue;
-}
-
-int DefinitionGeneratorCmdParser::get_return_code() const noexcept
-{
-    return status.return_code;
-}
-
-const clang::tooling::CompilationDatabase& DefinitionGeneratorCmdParser::get_compilation_database() const
-{
-    return *compilation_database_ptr;
-}
-
-FunctionDeclarationLocation DefinitionGeneratorCmdParser::get_function_declaration_location() const
-{
-    return declaration_location;
-}
-
-void DefinitionGeneratorCmdParser::dump_streams()
-{
-    std::cerr << err_stream.str();
-    std::cout << out_stream.str();
-}
-
-} // namespace Tsepepe

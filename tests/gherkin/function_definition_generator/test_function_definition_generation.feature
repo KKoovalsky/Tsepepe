@@ -374,6 +374,7 @@ Feature: Generates function definitions
     Scenario: Skips multiple default parameters
         Given Header file with content
         """
+        #include <string>
         struct Class
         {
             struct Nested
@@ -383,10 +384,10 @@ Feature: Generates function definitions
             void foo(Nested, unsigned i, bool do_yolo = false, std::string s= "bang", float val =2.4f);
         };
         """
-        When Method definition is generated from declaration at line 7
+        When Method definition is generated from declaration at line 8
         Then Stdout contains
         """
-        void Class::foo(Nested, unsigned i, bool do_yolo, std::string s, float val)
+        void Class::foo(Nested, unsigned int i, bool do_yolo, std::string s, float val)
         """
         And No errors are emitted
 

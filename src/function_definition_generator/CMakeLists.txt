@@ -1,4 +1,4 @@
-add_executable(tsepepe_function_definition_generator definition_generator.cpp tool.cpp cmd_parser.cpp)
+add_executable(tsepepe_function_definition_generator tool.cpp cmd_parser.cpp)
 
 target_include_directories(tsepepe_function_definition_generator PRIVATE ${LLVM_INCLUDE_DIR})
 target_link_libraries(tsepepe_function_definition_generator PRIVATE tsepepe_utils tsepepe_lib LLVMSupport clangTooling)

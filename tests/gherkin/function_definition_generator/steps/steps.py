@@ -1,11 +1,10 @@
 import os
-import re
-import behave
 import subprocess
 from behave.runner import Context
+from behave import given, when, then
 from hamcrest import assert_that, equal_to, empty, not_
 from helpers.file import File
-from helpers.utils import get_tool_path, get_result
+from helpers.utils import get_tool_path, get_result, get_file_content
 from helpers.tool_result import ToolResult
 
 
@@ -33,14 +32,19 @@ def step_impl(context: Context, filename: str):
 def step_impl(context, line: int):
     if len(context.created_files) == 0:
         raise RuntimeError(
-            (
-                "No file defined to pass to the tool!"
-                'Use "Given" expression to define a header file.'
-            )
+            "No file defined to pass to the tool!"
+            'Use "Given" expression to define a header file.'
         )
     tool_path = get_tool_path(context)
     header_file_path = context.created_files[-1].path
-    cmd = [tool_path, context.comp_db.path, header_file_path, line]
+    header_file_content = context.created_files[-1].content
+    cmd = [
+        tool_path,
+        context.comp_db.path,
+        header_file_path,
+        header_file_content,
+        line,
+    ]
     cmd_result = subprocess.run(cmd, capture_output=True)
     context.result = ToolResult(
         cmd_result.stdout, cmd_result.stderr, cmd_result.returncode
@@ -48,21 +52,19 @@ def step_impl(context, line: int):
 
 
 @when(
-    (
-        "Method definition is generated from declaration "
-        'in file "{filename}" at line {line}'
-    )
+    "Method definition is generated from declaration "
+    'in file "{filename}" at line {line}'
 )
 def step_impl(context, filename: str, line: int):
     if len(context.created_files) == 0:
         raise RuntimeError(
-            (
-                "No file defined to pass to the tool!"
-                'Use "Given" expression to define a header file.'
-            )
+            "No file defined to pass to the tool!"
+            'Use "Given" expression to define a header file.'
         )
     tool_path = get_tool_path(context)
-    cmd = [tool_path, context.comp_db.path, filename, line]
+    file_path = os.path.join(os.getcwd(), filename)
+    file_content = get_file_content(file_path)
+    cmd = [tool_path, context.comp_db.path, file_path, file_content, line]
     cmd_result = subprocess.run(cmd, capture_output=True)
     context.result = ToolResult(
         cmd_result.stdout, cmd_result.stderr, cmd_result.returncode
@@ -71,7 +73,7 @@ def step_impl(context, filename: str, line: int):
 
 @then("Stdout contains")
 def step_impl(context: Context):
-    expected_stdout = context.text
+    expected_stdout = context.text + "\n{\n}\n"
     stdout = get_result(context).stdout
     assert_that(stdout, equal_to(expected_stdout))
 
@@ -87,4 +89,3 @@ def step_impl(context):
 def step_impl(context):
     result = get_result(context)
     assert_that(result.return_code, not_(equal_to(0)))
-

@@ -27,3 +27,8 @@ def create_file(path: str, content: str):
     Path(directory).mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
         f.write(content)
+
+
+def get_file_content(path: str):
+    with open(path) as f:
+        return f.read()
