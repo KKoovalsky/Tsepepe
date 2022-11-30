@@ -8,7 +8,7 @@ Feature: Generates function definitions
             unsigned int foo();
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         unsigned int SomeClass::foo()
@@ -27,7 +27,7 @@ Feature: Generates function definitions
             Bar yolo();
         };
         """
-        When Method definition is generated from declaration at line 7
+        When Function definition is generated from declaration at line 7
         Then Stdout contains
         """
         Foo::Bar Foo::yolo()
@@ -52,7 +52,7 @@ Feature: Generates function definitions
             External::Nested gimme();
         };
         """
-        When Method definition is generated from declaration in file "caller.hpp" at line 4
+        When Function definition is generated from declaration in file "caller.hpp" at line 4
         Then Stdout contains
         """
         External::Nested Caller::gimme()
@@ -74,7 +74,7 @@ Feature: Generates function definitions
             };
         };
         """
-        When Method definition is generated from declaration at line 7
+        When Function definition is generated from declaration at line 7
         Then Stdout contains
         """
         Class::Nested::EvenMoreNested Class::Nested::EvenMoreNested::create()
@@ -93,7 +93,7 @@ Feature: Generates function definitions
             virtual void do_stuff() override;
         };
         """
-        When Method definition is generated from declaration at line 7
+        When Function definition is generated from declaration at line 7
         Then Stdout contains
         """
         void Derived::do_stuff()
@@ -109,7 +109,7 @@ Feature: Generates function definitions
             static Class make();
         };
         """
-        When Method definition is generated from declaration at line 4
+        When Function definition is generated from declaration at line 4
         Then Stdout contains
         """
         Class Class::make()
@@ -124,7 +124,7 @@ Feature: Generates function definitions
             [[nodiscard]] [[gnu::const]] int get();
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         int Yolo::get()
@@ -139,7 +139,7 @@ Feature: Generates function definitions
             void do_stuff() const;
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         void Benc::do_stuff() const
@@ -154,7 +154,7 @@ Feature: Generates function definitions
             void do_stuff() noexcept;
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         void Benc::do_stuff() noexcept
@@ -169,7 +169,7 @@ Feature: Generates function definitions
             void do_stuff() noexcept(false);
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         void Benc::do_stuff() noexcept(false)
@@ -186,7 +186,7 @@ Feature: Generates function definitions
             const Class& get() const&;
         };
         """
-        When Method definition is generated from declaration at line 4
+        When Function definition is generated from declaration at line 4
         Then Stdout contains
         """
         Class && Class::get() &&
@@ -198,7 +198,7 @@ Feature: Generates function definitions
         """
         unsigned long long bar();
         """
-        When Method definition is generated from declaration at line 1
+        When Function definition is generated from declaration at line 1
         Then Stdout contains
         """
         unsigned long long bar()
@@ -211,7 +211,7 @@ Feature: Generates function definitions
         """
         bool baz();
         """
-        When Method definition is generated from declaration at line 1
+        When Function definition is generated from declaration at line 1
         Then Stdout contains
         """
         bool baz()
@@ -227,7 +227,7 @@ Feature: Generates function definitions
         void foo();
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         void Namespace::foo()
@@ -248,7 +248,7 @@ Feature: Generates function definitions
 
         }
         """
-        When Method definition is generated from declaration at line 8
+        When Function definition is generated from declaration at line 8
         Then Stdout contains
         """
         Namespace::Nested Namespace::foo()
@@ -263,7 +263,7 @@ Feature: Generates function definitions
             void gimme(unsigned int number);
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         void Yolo::gimme(unsigned int number)
@@ -286,7 +286,7 @@ Feature: Generates function definitions
             void gimme(Nested1, unsigned int number, const Nested2&);
         };
         """
-        When Method definition is generated from declaration at line 11
+        When Function definition is generated from declaration at line 11
         Then Stdout contains
         """
         void Yolo::gimme(Nested1, unsigned int number, const Nested2 &)
@@ -302,7 +302,7 @@ Feature: Generates function definitions
             explicit Class();
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         Class::Class()
@@ -318,7 +318,7 @@ Feature: Generates function definitions
             ~Class();
         };
         """
-        When Method definition is generated from declaration at line 4
+        When Function definition is generated from declaration at line 4
         Then Stdout contains
         """
         Class::~Class()
@@ -338,7 +338,7 @@ Feature: Generates function definitions
                      std::vector<std::string> strings);
         };
         """
-        When Method definition is generated from declaration at line 6
+        When Function definition is generated from declaration at line 6
         Then Stdout contains
         """
         void Class::foo(unsigned int number, std::string, std::vector<std::string> strings)
@@ -353,7 +353,7 @@ Feature: Generates function definitions
             operator bool();
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         Class::operator bool()
@@ -368,7 +368,7 @@ Feature: Generates function definitions
             void foo(unsigned int i, bool do_yolo = true);
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Function definition is generated from declaration at line 3
         Then Stdout contains
         """
         void Class::foo(unsigned int i, bool do_yolo)
@@ -388,7 +388,7 @@ Feature: Generates function definitions
             void foo(Nested, unsigned i, bool do_yolo = false, std::string s= "bang", float val =2.4f);
         };
         """
-        When Method definition is generated from declaration at line 8
+        When Function definition is generated from declaration at line 8
         Then Stdout contains
         """
         void Class::foo(Nested, unsigned int i, bool do_yolo, std::string s, float val)
@@ -414,7 +414,7 @@ Feature: Generates function definitions
             };
         };
         """
-        When Method definition is generated from declaration at line 12
+        When Function definition is generated from declaration at line 12
         Then Stdout contains
         """
         std::pair<Parent::ParentType, Parent::Nested::NestedType> Parent::Nested::DeeplyNested::gimme(ParentType, NestedType p2)
@@ -441,7 +441,7 @@ Feature: Generates function definitions
             };
         };
         """
-        When Method definition is generated from declaration at line 13
+        When Function definition is generated from declaration at line 13
         Then Stdout contains
         """
         std::pair<Ns1::Ns1Type, Ns1::Ns2::Ns2Type> Ns1::Ns2::Ns3::gimme(Ns1Type p1, Ns2Type)
@@ -457,6 +457,6 @@ Feature: Generates function definitions
             void foo();
         };
         """
-        When Method definition is generated from declaration at line 1
+        When Function definition is generated from declaration at line 1
         Then Error is raised
 

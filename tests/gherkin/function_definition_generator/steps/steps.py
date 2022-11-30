@@ -28,7 +28,7 @@ def step_impl(context: Context, filename: str):
     context.created_files.append(file)
 
 
-@when("Method definition is generated from declaration at line {line}")
+@when("Function definition is generated from declaration at line {line}")
 def step_impl(context, line: int):
     if len(context.created_files) == 0:
         raise RuntimeError(
@@ -52,7 +52,7 @@ def step_impl(context, line: int):
 
 
 @when(
-    "Method definition is generated from declaration "
+    "Function definition is generated from declaration "
     'in file "{filename}" at line {line}'
 )
 def step_impl(context, filename: str, line: int):
