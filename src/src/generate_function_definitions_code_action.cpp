@@ -72,8 +72,8 @@ std::string Tsepepe::GenerateFunctionDefinitionsCodeActionLibclangBased::apply(
         auto node{match.getNodeAs<FunctionDecl>("function")};
         if (node == nullptr)
             continue;
-        auto definition{
-            Tsepepe::fully_expand_function_declaration(node, source_manager, {.ignore_attribute_specifiers = true})};
+        auto definition{Tsepepe::fully_expand_function_declaration(
+            node, source_manager, {.ignore_attribute_specifiers = true, .remove_scope_from_parameters = true})};
         result_parted.emplace_back(std::move(definition));
     }
 

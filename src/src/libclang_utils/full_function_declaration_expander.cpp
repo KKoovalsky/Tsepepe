@@ -17,6 +17,8 @@
 #include <clang/Basic/SourceLocation.h>
 #include <clang/Lex/Lexer.h>
 
+#include "scope_remover.hpp"
+
 #include "libclang_utils/misc_utils.hpp"
 #include "string_utils.hpp"
 
@@ -125,6 +127,19 @@ struct Expander
     }
 
     std::string get_parameters(const FunctionDecl* node) const
+    {
+        auto result{get_parameters_with_fully_qualified_types(node)};
+
+        if (options.remove_scope_from_parameters)
+        {
+            Tsepepe::FullyQualifiedName scope{node->getQualifiedNameAsString()};
+            result = Tsepepe::AllScopeRemover{std::move(scope)}.remove_from(result);
+        }
+
+        return result;
+    }
+
+    std::string get_parameters_with_fully_qualified_types(const FunctionDecl* node) const
     {
         auto param_to_string{[&](const ParmVarDecl* param) {
             auto result{type_to_string(param->getType(), node->getASTContext())};

@@ -17,6 +17,9 @@ struct FullFunctionDeclarationExpanderOptions
 
     //! Whether to include "[[...]]" attibutes in the final stringified declaration.
     unsigned ignore_attribute_specifiers : 1 {0};
+
+    //! Whether to remove class scope prefix ('Namespace::ClassName::') from the parameters.
+    unsigned remove_scope_from_parameters : 1 {0};
 };
 
 std::string fully_expand_function_declaration(

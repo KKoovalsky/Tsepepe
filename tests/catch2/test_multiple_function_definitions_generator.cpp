@@ -190,11 +190,11 @@ TEST_CASE("Multiple function definitions are generated at once", "[FunctionDefin
                      .selected_line_begin = 14,
                      .selected_line_end = 22,
                      .expected_result =
-                         "std::pair<Bar, Basta::Baz> Basta::gimme(std::vector<std::pair<std::string, Basta::Baz>>)\n"
+                         "std::pair<Bar, Basta::Baz> Basta::gimme(std::vector<std::pair<std::string, Baz>>)\n"
                          "{\n"
                          "}\n"
                          "\n"
-                         "std::string Basta::to_string(std::vector<Basta::Baz>)\n"
+                         "std::string Basta::to_string(std::vector<Baz>)\n"
                          "{\n"
                          "}\n"},
             TestData{.description = "Prints out an empty string if no declaration found within the selected range",
@@ -229,13 +229,15 @@ TEST_CASE("Multiple function definitions are generated at once", "[FunctionDefin
         auto [description, header_file_content, selected_line_begin, selected_line_end, expected_result] =
             GENERATE(values(test_data));
 
+        INFO(description);
+
         auto result{GenerateFunctionDefinitionsCodeActionLibclangBased{compilation_database}.apply(
             {.source_file_path = fs::temp_directory_path(),
              .source_file_content = std::move(header_file_content),
              .selected_line_begin = selected_line_begin,
              .selected_line_end = selected_line_end})};
 
-        REQUIRE(result == expected_result);
+        CHECK(result == expected_result);
     }
 
     SECTION("Negative tests")
@@ -272,7 +274,7 @@ TEST_CASE("Multiple function definitions are generated at once", "[FunctionDefin
                      .selected_line_end = 3});
             }};
 
-            REQUIRE_THROWS_AS(do_apply(), Tsepepe::BaseError);
+            CHECK_THROWS_AS(do_apply(), Tsepepe::BaseError);
         }
     }
 }

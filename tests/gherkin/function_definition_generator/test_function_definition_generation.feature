@@ -84,12 +84,16 @@ Feature: Generates function definitions
     Scenario: Ignores virtual and override keywords
         Given Header file with content
         """
+        class Base
+        {
+            virtual void do_stuff();
+        };
         class Derived : public Base
         {
             virtual void do_stuff() override;
         };
         """
-        When Method definition is generated from declaration at line 3
+        When Method definition is generated from declaration at line 7
         Then Stdout contains
         """
         void Derived::do_stuff()
@@ -103,7 +107,7 @@ Feature: Generates function definitions
         {
         public:
             static Class make();
-        }
+        };
         """
         When Method definition is generated from declaration at line 4
         Then Stdout contains
@@ -117,8 +121,8 @@ Feature: Generates function definitions
         """
         class Yolo
         {
-            [[nodiscard]] [[no_unique_address]] int get();
-        }
+            [[nodiscard]] [[gnu::const]] int get();
+        };
         """
         When Method definition is generated from declaration at line 3
         Then Stdout contains
@@ -133,7 +137,7 @@ Feature: Generates function definitions
         class Benc
         {
             void do_stuff() const;
-        }
+        };
         """
         When Method definition is generated from declaration at line 3
         Then Stdout contains
@@ -148,7 +152,7 @@ Feature: Generates function definitions
         class Benc
         {
             void do_stuff() noexcept;
-        }
+        };
         """
         When Method definition is generated from declaration at line 3
         Then Stdout contains
@@ -163,7 +167,7 @@ Feature: Generates function definitions
         class Benc
         {
             void do_stuff() noexcept(false);
-        }
+        };
         """
         When Method definition is generated from declaration at line 3
         Then Stdout contains
@@ -285,7 +289,7 @@ Feature: Generates function definitions
         When Method definition is generated from declaration at line 11
         Then Stdout contains
         """
-        void Yolo::gimme(Nested1, unsigned int number, const Nested2&)
+        void Yolo::gimme(Nested1, unsigned int number, const Nested2 &)
         """
         And No errors are emitted
 
@@ -390,6 +394,60 @@ Feature: Generates function definitions
         void Class::foo(Nested, unsigned int i, bool do_yolo, std::string s, float val)
         """
         And No errors are emitted
+
+    Scenario: Does not include scope in parameters nested in the same class scope, for a deeply nested method
+        Given Header file with content
+        """
+        #include <utility>
+        struct Parent
+        {
+            struct ParentType {} ;
+
+            struct Nested
+            {
+                struct NestedType { };
+
+                struct DeeplyNested
+                {
+                    std::pair<ParentType, NestedType> gimme(ParentType, NestedType p2);
+                };
+            };
+        };
+        """
+        When Method definition is generated from declaration at line 12
+        Then Stdout contains
+        """
+        std::pair<Parent::ParentType, Parent::Nested::NestedType> Parent::Nested::DeeplyNested::gimme(ParentType, NestedType p2)
+        """
+        And No errors are emitted
+
+    Scenario: Does not include scope in parameters nested in the same namespace, for a deeply nested free function 
+        Given Header file with content
+        """
+        #include <utility>
+
+        namespace Ns1
+        {
+            struct Ns1Type {};
+
+            namespace Ns2
+            {
+                struct Ns2Type {};
+
+                namespace Ns3
+                {
+                    std::pair<Ns1Type, Ns2Type> gimme(Ns1Type p1, Ns2Type);
+                };
+            };
+        };
+        """
+        When Method definition is generated from declaration at line 13
+        Then Stdout contains
+        """
+        std::pair<Ns1::Ns1Type, Ns1::Ns2::Ns2Type> Ns1::Ns2::Ns3::gimme(Ns1Type p1, Ns2Type)
+        """
+        And No errors are emitted
+
 
     Scenario: Raises error if no definition found
         Given Header file with content
