@@ -39,4 +39,10 @@ TEST_CASE("Self deleting file creates and deletes itself", "[SelfDeletingFile]")
         buffer << ifs.rdbuf();
         REQUIRE(buffer.str() == "some yolo content");
     }
+
+    SECTION("Resolves to an absolute path")
+    {
+        SelfDeletingFile f{"some_yolo.txt", ""};
+        REQUIRE(f.is_absolute());
+    }
 }

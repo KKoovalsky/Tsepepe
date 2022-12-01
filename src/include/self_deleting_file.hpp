@@ -18,7 +18,8 @@ struct SelfDeletingFile : std::filesystem::path
     SelfDeletingFile(SelfDeletingFile&&) = default;
     SelfDeletingFile& operator=(SelfDeletingFile&&) = default;
 
-    SelfDeletingFile(std::filesystem::path p, const std::string& content) : std::filesystem::path{std::move(p)}
+    SelfDeletingFile(std::filesystem::path p, const std::string& content) :
+        std::filesystem::path{std::filesystem::absolute(std::move(p)).lexically_normal()}
     {
         std::ofstream{*this} << content;
     }
