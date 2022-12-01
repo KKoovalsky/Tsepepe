@@ -14,6 +14,7 @@
 #include "base_error.hpp"
 #include "libclang_utils/full_function_declaration_expander.hpp"
 #include "string_utils.hpp"
+#include "temporary_file_maker.hpp"
 
 namespace fs = std::filesystem;
 using namespace clang;
@@ -47,7 +48,8 @@ std::string Tsepepe::GenerateFunctionDefinitionsCodeActionLibclangBased::apply(
 {
     validate_selected_range(params);
 
-    auto full_path_to_temp_file{make_temporary_source_file(params.source_file_path, params.source_file_content)};
+    auto full_path_to_temp_file{
+        Tsepepe::make_temporary_source_file(params.source_file_path, "func_decls", params.source_file_content)};
 
     std::vector<std::unique_ptr<ASTUnit>> ast_units;
     ClangTool tool{*compilation_database, {full_path_to_temp_file.string()}};
@@ -89,22 +91,5 @@ void Tsepepe::GenerateFunctionDefinitionsCodeActionLibclangBased::validate_selec
     auto end{params.selected_line_end};
     if (begin > end)
         throw Tsepepe::BaseError{"Selected line range must have the end line be past the begin line!"};
-}
-
-std::filesystem::path Tsepepe::GenerateFunctionDefinitionsCodeActionLibclangBased::make_temporary_source_file(
-    const std::filesystem::path& path, const std::string& file_content)
-{
-    fs::path temp_file_path;
-    if (not fs::is_directory(path))
-    {
-        // Assume is the path is a path to a file.
-        std::string fname{".tsepepe_" + path.filename().string()};
-        temp_file_path = path.parent_path() / std::move(fname);
-    } else
-    {
-        temp_file_path = path / ".tsepepe_func_decls_temp.hpp";
-    }
-
-    return this_code_action_directory_tree.create_file(std::move(temp_file_path), file_content);
 }
 

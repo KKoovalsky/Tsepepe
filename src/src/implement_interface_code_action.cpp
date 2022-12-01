@@ -20,6 +20,7 @@
 #include "common_types.hpp"
 #include "directory_tree.hpp"
 #include "include_statement_place_resolver.hpp"
+#include "temporary_file_maker.hpp"
 
 #include "libclang_utils/ast_record.hpp"
 #include "libclang_utils/base_specifier_resolver.hpp"
@@ -83,7 +84,7 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
     ClangClassRecord find_implementor()
     {
         auto full_path_to_temp_file{
-            make_temporary_source_file(parameters.source_file_path, parameters.source_file_content)};
+            make_temporary_source_file(parameters.source_file_path, "implementor", parameters.source_file_content)};
 
         ClangTool tool{*compilation_database, {full_path_to_temp_file.string()}};
         tool.buildASTs(ast_units);
@@ -194,22 +195,6 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
             code += '\n';
         }
         return {.code = std::move(code), .offset = method_overrides_place.offset};
-    }
-
-    fs::path make_temporary_source_file(const fs::path& path, const std::string& file_content)
-    {
-        fs::path temp_file_path;
-        if (not fs::is_directory(path))
-        {
-            // Assume the path is a path to a file.
-            std::string fname{".tsepepe_" + path.filename().string()};
-            temp_file_path = path.parent_path() / std::move(fname);
-        } else
-        {
-            temp_file_path = path / ".tsepepe_implementor_temp.hpp";
-        }
-
-        return this_code_action_directory_tree.create_file(std::move(temp_file_path), file_content);
     }
 
     std::shared_ptr<CompilationDatabase> compilation_database;
