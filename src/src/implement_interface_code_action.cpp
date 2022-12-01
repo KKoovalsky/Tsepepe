@@ -201,7 +201,7 @@ struct ImplementIntefaceCodeActionLibclangBasedImpl
         fs::path temp_file_path;
         if (not fs::is_directory(path))
         {
-            // Assume is the path is a path to a file.
+            // Assume the path is a path to a file.
             std::string fname{".tsepepe_" + path.filename().string()};
             temp_file_path = path.parent_path() / std::move(fname);
         } else
