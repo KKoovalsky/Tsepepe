@@ -11,6 +11,7 @@ add_executable(tsepepe_lib_unit_test
     test_code_insertions_applier.cpp
     test_multiple_function_definitions_generator.cpp
     test_self_deleting_file.cpp
+    test_temporary_file_maker.cpp
 )
 
 target_link_libraries(tsepepe_lib_unit_test Catch2::Catch2WithMain tsepepe_lib)
