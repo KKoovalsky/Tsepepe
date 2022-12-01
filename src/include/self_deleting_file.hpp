@@ -7,14 +7,20 @@
 
 #include <filesystem>
 #include <fstream>
+#include <string>
 
 namespace Tsepepe
 {
 struct SelfDeletingFile : std::filesystem::path
 {
-    SelfDeletingFile(std::filesystem::path p) : std::filesystem::path{std::move(p)}
+    SelfDeletingFile(const SelfDeletingFile&) = delete;
+    SelfDeletingFile& operator=(const SelfDeletingFile&) = delete;
+    SelfDeletingFile(SelfDeletingFile&&) = default;
+    SelfDeletingFile& operator=(SelfDeletingFile&&) = default;
+
+    SelfDeletingFile(std::filesystem::path p, const std::string& content) : std::filesystem::path{std::move(p)}
     {
-        std::ofstream{*this};
+        std::ofstream{*this} << content;
     }
 
     ~SelfDeletingFile()
