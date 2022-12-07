@@ -297,3 +297,42 @@
           }
        }
     }
+
+## Code Action flow 
+
+1. Client requests code actions for the current cursor position or selection.
+2. The LSP responds with a list of Commands or CodeActions (may be mixed; both are specific types from the LSP spec), 
+that can be applied for that current position or selection. `clangd` responds with `CodeAction`:
+
+    {
+       "id":65,
+       "jsonrpc":"2.0",
+       "result":[
+          {
+             "command":{
+                "arguments":[
+                   {
+                      "file":"file:///home/kacper/Workspace/Tests/CPP/TsepepePlayground/fun.cpp",
+                      "selection":{
+                         "end":{
+                            "character":0,
+                            "line":13
+                         },
+                         "start":{
+                            "character":0,
+                            "line":9
+                         }
+                      },
+                      "tweakID":"ExtractFunction"
+                   }
+                ],
+                "command":"clangd.applyTweak",
+                "title":"Extract to function"
+             },
+             "kind":"refactor",
+             "title":"Extract to function"
+          }
+       ]
+    }
+
+3. The client performs runs the `command` with the `executeCommand` request.
