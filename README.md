@@ -251,3 +251,14 @@ ctest
 ```
 
 The tests are written in Gherkin, driven by `behave`.
+
+## TODO
+
+1. Extract method.
+2. Extract function.
+3. Extract lambda.
+4. Introduce parameter.
+5. Introduce lambda parameter.
+6. Introduce property.
+7. Extract interface?
+8. Turn inline definition into out-of-line definition.
