@@ -27,6 +27,9 @@ class SomeClass
 };
 ```
 when a corresponding source file is provided, the user shall be asked whether the definition shall be out-of-line.
+10. Support "hoisting": when a variable is declared within the visual block, and then it is used outside of it, then
+the declaration should be left as is, and captured as a parameter. (Resharper within CLion doesn't handle that well
+at the stage of writing this: the variables' initial values are removed).
 
 # Extract function code action 
 
