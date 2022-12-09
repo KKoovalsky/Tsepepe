@@ -38,8 +38,12 @@ It is used in such a way:
 tsepepe_function_definition_generator                    \
     <path to directory with compilation database>        \
     <path to the C++ file with declaration>              \
-    <line with the code where the declaration is found>
+    <cursor position line begin>                         \
+    [optional cursor position line end]
 ```
+
+When a selection is considered then the range [cursor position line begin; cursor position line end] is taken as the
+selected range. In case of no selection, _cursor position line begin_ shall be the current position of the cursor.
 
 For multiline declaration expects the first line with the declaration.
 
