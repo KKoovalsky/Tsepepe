@@ -9,6 +9,7 @@
 #include <iostream>
 #include <regex>
 
+#include <clang/Basic/SourceManager.h>
 #include <clang/Lex/Lexer.h>
 
 using namespace clang;
