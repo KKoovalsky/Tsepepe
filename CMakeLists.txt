@@ -17,6 +17,11 @@ option(TSEPEPE_ENABLE_TESTING "Enable testing of this project" OFF)
 find_package(LLVM 14 REQUIRED)
 find_package(Clang REQUIRED)
 
+# clangTooling may be either provided as individual libraries or as a bundled libclang-cpp lib
+find_library(CLANGTOOLING_LIBRARY NAMES clangTooling clang-cpp)
+add_library(clangTooling SHARED IMPORTED)
+set_target_properties(clangTooling PROPERTIES IMPORTED_LOCATION ${CLANGTOOLING_LIBRARY})
+
 add_compile_options(-Wall)
 
 include(cmake/dependencies.cmake)
