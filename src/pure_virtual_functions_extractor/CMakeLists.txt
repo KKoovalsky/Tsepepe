@@ -2,5 +2,5 @@ add_executable(tsepepe_pure_virtual_functions_extractor tool.cpp extractor.cpp c
 
 target_include_directories(tsepepe_pure_virtual_functions_extractor PRIVATE ${LLVM_INCLUDE_DIR})
 target_link_libraries(tsepepe_pure_virtual_functions_extractor PRIVATE 
-    LLVMSupport clangTooling tsepepe_utils)
+    LLVM LLVMSupport clangTooling tsepepe_utils)
 

@@ -1,7 +1,7 @@
 add_executable(tsepepe_function_definition_generator tool.cpp cmd_parser.cpp)
 
 target_include_directories(tsepepe_function_definition_generator PRIVATE ${LLVM_INCLUDE_DIR})
-target_link_libraries(tsepepe_function_definition_generator PRIVATE tsepepe_utils tsepepe_lib LLVMSupport clangTooling)
+target_link_libraries(tsepepe_function_definition_generator PRIVATE tsepepe_utils tsepepe_lib LLVM LLVMSupport clangTooling)
 
 target_compile_options(tsepepe_function_definition_generator PRIVATE -Wno-deprecated-enum-enum-conversion)
 
