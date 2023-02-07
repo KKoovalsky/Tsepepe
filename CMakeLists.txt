@@ -14,7 +14,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(TSEPEPE_ENABLE_TESTING "Enable testing of this project" OFF)
 
-find_package(LLVM 14 REQUIRED)
+find_package(LLVM REQUIRED)
+if(LLVM_VERSION_MAJOR LESS 14)
+    message(FATAL_ERROR "LLVM >= 14 is required")
+endif()
 find_package(Clang REQUIRED)
 
 # clangTooling may be either provided as individual libraries or as a bundled libclang-cpp lib
