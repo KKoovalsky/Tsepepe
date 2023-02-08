@@ -11,7 +11,7 @@ A collection of C++ refactoring tools (WIP), provided as binaries.
 * GCC 12.1.0+ (clang-14 has been tried, with no luck - fails on compiling the mix of std::filesystem iterators
 with views)
 * CMake 3.22
-* `libclang-14-dev`, `libllvm-14-dev` or `libclang-15-dev`, `libllvm-15-dev`
+* `libclang-14-dev`+ and `libllvm-14-dev`+
 * `liboost-1.74`+
 * `ripgrep`
 
