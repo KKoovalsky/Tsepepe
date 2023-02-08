@@ -20,10 +20,14 @@ if(LLVM_VERSION_MAJOR LESS 14)
 endif()
 find_package(Clang REQUIRED)
 
-# clangTooling may be either provided as individual libraries or as a bundled libclang-cpp lib
-find_library(CLANGTOOLING_LIBRARY NAMES clangTooling clang-cpp)
-add_library(clangTooling SHARED IMPORTED)
-set_target_properties(clangTooling PROPERTIES IMPORTED_LOCATION ${CLANGTOOLING_LIBRARY})
+if(NOT TARGET clangTooling)
+    # clangTooling may be either provided as individual libraries or as a bundled libclang-cpp lib
+    find_library(CLANGTOOLING_LIBRARY NAMES clangTooling clang-cpp)
+    add_library(clangTooling SHARED IMPORTED)
+    set_target_properties(clangTooling PROPERTIES IMPORTED_LOCATION ${CLANGTOOLING_LIBRARY})
+else()
+    message(STATUS "Tsepepe: found clangTooling bundled with Clang package")
+endif()
 
 add_compile_options(-Wall)
 
