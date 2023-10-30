@@ -148,7 +148,7 @@ struct SuitablePlaceInClassFinder
 
     SourceLocation unpack_source_location_from_token(const Optional<Token>& token) const
     {
-        if (not token.hasValue())
+        if (not token.has_value())
             throw Tsepepe::BaseError{"Can't unpack token; token empty!"};
 
         auto loc{token->getLocation()};

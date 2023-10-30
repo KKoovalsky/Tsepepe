@@ -44,7 +44,7 @@ struct TokenIterator : std::forward_iterator_tag
 
     reference operator*() const
     {
-        if (not current_token.hasValue())
+        if (not current_token.has_value())
             throw Tsepepe::BaseError{"Dereferencing invalid token!"};
         return *current_token;
     }
@@ -57,7 +57,7 @@ struct TokenIterator : std::forward_iterator_tag
     //! Prefix increment
     TokenIterator& operator++()
     {
-        if (not current_token.hasValue())
+        if (not current_token.has_value())
             return *this;
         current_token = clang::Lexer::findNextToken(current_token->getLocation(), *source_manager, *lang_options);
         return *this;
